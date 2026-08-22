@@ -72,7 +72,6 @@ function SocialButtons() {
 }
 
 export function SignInForm() {
-  const router = useRouter();
   const [method, setMethod] = useState<"email" | "phone">("email");
   const [show, setShow] = useState(false);
   const [error, setError] = useState("");
@@ -97,8 +96,7 @@ export function SignInForm() {
       setError(result.error ?? "Sign-in is temporarily unavailable.");
       return;
     }
-    router.replace("/dashboard");
-    router.refresh();
+    window.location.assign(result.destination ?? "/dashboard");
   };
   return (
     <form

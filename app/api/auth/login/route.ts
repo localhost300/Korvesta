@@ -12,6 +12,7 @@ import {
   recordSecurityEvent,
   rejectCrossSiteMutation,
 } from "@/lib/security/request";
+import { ensureCustomerProfile } from "@/lib/supabase/profiles";
 
 export async function POST(request: Request) {
   const crossSite = rejectCrossSiteMutation(request);
@@ -50,11 +51,17 @@ export async function POST(request: Request) {
         { status: 401 },
       );
     }
+    await ensureCustomerProfile(data.user);
     const { data: profile } = await supabase
       .from("profiles")
       .select("role,account_status")
       .eq("id", data.user.id)
       .single();
+    if (!profile)
+      return NextResponse.json(
+        { error: "Your customer profile could not be initialized." },
+        { status: 503 },
+      );
     const isAdmin = profile?.role === "admin";
     if ((role === "admin") !== isAdmin) {
       await supabase.auth.signOut();

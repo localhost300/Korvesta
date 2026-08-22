@@ -6,6 +6,7 @@ import {
   rejectCrossSiteMutation,
 } from "@/lib/security/request";
 import { sendTransactionalEmail } from "@/lib/email";
+import { ensureCustomerProfile } from "@/lib/supabase/profiles";
 
 export async function POST(request: Request) {
   const crossSite = rejectCrossSiteMutation(request);
@@ -71,6 +72,7 @@ export async function POST(request: Request) {
   });
   const verifiedUser = data.user;
   if (verifiedUser?.email) {
+    await ensureCustomerProfile(verifiedUser);
     const fullName =
       typeof verifiedUser.user_metadata?.full_name === "string"
         ? verifiedUser.user_metadata.full_name.trim()

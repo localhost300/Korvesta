@@ -5,6 +5,7 @@ import {
   enforceRateLimit,
   rejectCrossSiteMutation,
 } from "@/lib/security/request";
+import { ensureCustomerProfile } from "@/lib/supabase/profiles";
 
 export async function POST(request: Request) {
   const crossSite = rejectCrossSiteMutation(request);
@@ -54,6 +55,7 @@ export async function POST(request: Request) {
   });
   if (error)
     return NextResponse.json({ error: error.message }, { status: 400 });
+  if (data.user) await ensureCustomerProfile(data.user);
   if (!data.session) {
     (await cookies()).set("korvesta_pending_verification", body.email, {
       httpOnly: true,
