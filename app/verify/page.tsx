@@ -9,9 +9,9 @@ export default async function VerifyPage() {
   if (!email?.includes("@")) redirect("/register");
   return (
     <AuthShell>
-      <main className="container-shell grid min-h-[calc(100vh-150px)] items-center gap-16 py-12 lg:grid-cols-[1fr_.9fr]">
+      <main className="container-shell grid min-h-[calc(100vh-150px)] min-w-0 items-center gap-16 py-8 sm:py-12 lg:grid-cols-[1fr_.9fr]">
         <VerificationForm email={email} />
-        <SecurityPanel />
+        <div className="hidden min-w-0 lg:block"><SecurityPanel /></div>
       </main>
     </AuthShell>
   );

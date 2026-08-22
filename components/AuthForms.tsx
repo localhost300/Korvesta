@@ -103,16 +103,16 @@ export function SignInForm() {
       action="/dashboard"
       method="get"
       onSubmit={submit}
-      className="w-full max-w-[520px]"
+      className="min-w-0 w-full max-w-[520px]"
     >
-      <h1 className="text-4xl font-semibold tracking-[-.04em] sm:text-[44px]">
+      <h1 className="text-[clamp(2.25rem,11vw,2.75rem)] font-semibold leading-tight tracking-[-.04em]">
         Welcome back
       </h1>
       <p className="mt-3 text-base text-muted">
         Sign in to access your account
       </p>
       <div
-        className="mt-8 flex w-64 border-b text-sm"
+        className="mt-8 flex w-full max-w-64 border-b text-sm"
         style={{ borderColor: "var(--border)" }}
       >
         {(["email", "phone"] as const).map((item) => (

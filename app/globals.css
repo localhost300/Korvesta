@@ -130,6 +130,15 @@ a {
   width: min(1400px, calc(100% - 40px));
   margin-inline: auto;
 }
+@media (max-width: 479px) {
+  .container-shell {
+    width: min(1400px, calc(100% - 28px));
+  }
+  .gold-button,
+  .ghost-button {
+    max-width: 100%;
+  }
+}
 .surface {
   background: var(--surface);
   border: 1px solid var(--border);

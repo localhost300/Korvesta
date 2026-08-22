@@ -51,6 +51,12 @@ const moreItems = [
     href: "/sign-in",
     icon: IconLogin,
   },
+  {
+    label: "Get Started",
+    description: "Create your Korvesta account",
+    href: "/register",
+    icon: IconRocket,
+  },
 ];
 
 function routeIsActive(pathname: string, href: string) {
@@ -159,15 +165,6 @@ export function MobileBottomNav() {
                   );
                 })}
               </nav>
-
-              <Link
-                href="/register"
-                onClick={() => setMenuOpen(false)}
-                className="gold-button mt-3 w-full"
-              >
-                <IconRocket size={18} />
-                Get Started
-              </Link>
             </motion.aside>
           </>
         ) : null}
