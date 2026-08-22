@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -439,12 +439,26 @@ export function RegisterForm() {
 }
 
 export function VerificationForm({ email }: { email: string }) {
+  const verificationWindowSeconds = 120;
   const router = useRouter();
   const refs = useRef<Array<HTMLInputElement | null>>([]);
   const [digits, setDigits] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
   const [verificationNotice, setVerificationNotice] = useState("");
   const [pending, setPending] = useState(false);
+  const [secondsRemaining, setSecondsRemaining] = useState(
+    verificationWindowSeconds,
+  );
+  const [resending, setResending] = useState(false);
+  useEffect(() => {
+    if (secondsRemaining <= 0) return;
+    const timer = window.setInterval(
+      () => setSecondsRemaining((seconds) => Math.max(0, seconds - 1)),
+      1000,
+    );
+    return () => window.clearInterval(timer);
+  }, [secondsRemaining]);
+  const countdown = `${String(Math.floor(secondsRemaining / 60)).padStart(2, "0")}:${String(secondsRemaining % 60).padStart(2, "0")}`;
   const changeDigit = (index: number, value: string) => {
     const digit = value.replace(/\D/g, "").slice(-1);
     const next = [...digits];
@@ -467,6 +481,8 @@ export function VerificationForm({ email }: { email: string }) {
     router.refresh();
   }
   async function resend() {
+    if (secondsRemaining > 0 || resending) return;
+    setResending(true);
     setError("");
     setVerificationNotice("");
     const response = await fetch("/api/auth/verify-otp", {
@@ -475,8 +491,11 @@ export function VerificationForm({ email }: { email: string }) {
       body: JSON.stringify({ email, action: "resend" }),
     }).catch(() => null);
     const result = response ? await response.json().catch(() => ({})) : {};
+    setResending(false);
     if (!response?.ok)
       return setError(result.error ?? "A new code could not be sent.");
+    setDigits(["", "", "", "", "", ""]);
+    setSecondsRemaining(verificationWindowSeconds);
     setVerificationNotice("A new verification code was sent.");
   }
   return (
@@ -514,14 +533,18 @@ export function VerificationForm({ email }: { email: string }) {
       </div>
       <div className="mt-6 flex max-w-[500px] justify-between text-sm">
         <span className="text-muted">
-          Code expires in <strong className="text-[var(--text)]">01:48</strong>
+          {secondsRemaining > 0 ? "Resend available in " : "You can resend now"}
+          {secondsRemaining > 0 ? (
+            <strong className="text-[var(--text)]">{countdown}</strong>
+          ) : null}
         </span>
         <button
           type="button"
           onClick={() => void resend()}
-          className="text-[var(--amber)]"
+          disabled={secondsRemaining > 0 || resending || !email}
+          className="text-[var(--amber)] disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Resend code ↻
+          {resending ? "Sending…" : "Resend code ↻"}
         </button>
       </div>
       <div className="surface-soft mt-8 flex max-w-[500px] gap-4 p-5">
