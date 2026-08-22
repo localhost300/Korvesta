@@ -4,6 +4,7 @@ import {
   enforceRateLimit,
   rejectCrossSiteMutation,
 } from "@/lib/security/request";
+import { sendTransactionalEmail } from "@/lib/email";
 
 export async function POST(request: Request) {
   const crossSite = rejectCrossSiteMutation(request);
@@ -55,5 +56,26 @@ export async function POST(request: Request) {
       { error: "The code is invalid or has expired." },
       { status: 400 },
     );
+  const verifiedUser = data.user;
+  if (verifiedUser?.email) {
+    const fullName =
+      typeof verifiedUser.user_metadata?.full_name === "string"
+        ? verifiedUser.user_metadata.full_name.trim()
+        : "";
+    await sendTransactionalEmail({
+      to: verifiedUser.email,
+      subject: "Welcome to Korvesta",
+      heading: fullName ? `Welcome, ${fullName}` : "Welcome to Korvesta",
+      message:
+        "Your email address has been verified and your Korvesta account is ready. You can now complete your profile, submit identity verification and explore your dashboard.",
+      details: [
+        ["Email", verifiedUser.email],
+        ["Account status", "Verified"],
+      ],
+      actionLabel: "Open your dashboard",
+      actionPath: "/dashboard",
+      idempotencyKey: `welcome-${verifiedUser.id}`,
+    });
+  }
   return NextResponse.json({ ok: true, authenticated: Boolean(data.session) });
 }
