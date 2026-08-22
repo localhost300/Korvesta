@@ -115,12 +115,6 @@ export function Header() {
               Sign In
             </Link>
 
-            <Link
-              href="/register"
-              className="gold-button hidden min-h-10 px-4 lg:inline-flex"
-            >
-              Get Started
-            </Link>
           </div>
         </div>
       </header>
