@@ -41,9 +41,9 @@ export async function POST(request: Request) {
       : NextResponse.json({ ok: true });
   }
   const token = body?.token?.replace(/\D/g, "");
-  if (!token || token.length < 6)
+  if (!token || token.length !== 8)
     return NextResponse.json(
-      { error: "Enter the complete verification code." },
+      { error: "Enter the complete 8-digit verification code." },
       { status: 400 },
     );
   const { data, error } = await supabase.auth.verifyOtp({

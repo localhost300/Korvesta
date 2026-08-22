@@ -440,9 +440,12 @@ export function RegisterForm() {
 
 export function VerificationForm({ email }: { email: string }) {
   const verificationWindowSeconds = 120;
+  const verificationCodeLength = 8;
   const router = useRouter();
   const refs = useRef<Array<HTMLInputElement | null>>([]);
-  const [digits, setDigits] = useState(["", "", "", "", "", ""]);
+  const [digits, setDigits] = useState(() =>
+    Array.from({ length: verificationCodeLength }, () => ""),
+  );
   const [error, setError] = useState("");
   const [verificationNotice, setVerificationNotice] = useState("");
   const [pending, setPending] = useState(false);
@@ -464,7 +467,8 @@ export function VerificationForm({ email }: { email: string }) {
     const next = [...digits];
     next[index] = digit;
     setDigits(next);
-    if (digit && index < 5) refs.current[index + 1]?.focus();
+    if (digit && index < verificationCodeLength - 1)
+      refs.current[index + 1]?.focus();
   };
   async function verify() {
     setPending(true);
@@ -494,7 +498,7 @@ export function VerificationForm({ email }: { email: string }) {
     setResending(false);
     if (!response?.ok)
       return setError(result.error ?? "A new code could not be sent.");
-    setDigits(["", "", "", "", "", ""]);
+    setDigits(Array.from({ length: verificationCodeLength }, () => ""));
     setSecondsRemaining(verificationWindowSeconds);
     setVerificationNotice("A new verification code was sent.");
   }
@@ -510,12 +514,12 @@ export function VerificationForm({ email }: { email: string }) {
         Verify your account
       </h1>
       <p className="mt-3 text-sm text-muted">
-        Enter the 6-digit code we sent to
+        Enter the 8-digit code we sent to
       </p>
       <p className="mt-2 break-all font-semibold">
         {email || "Return to registration and enter your email."}
       </p>
-      <div className="mt-8 grid max-w-[500px] grid-cols-6 gap-3">
+      <div className="mt-8 grid max-w-[600px] grid-cols-4 gap-3 sm:grid-cols-8">
         {digits.map((digit, i) => (
           <input
             key={i}
@@ -531,7 +535,7 @@ export function VerificationForm({ email }: { email: string }) {
           />
         ))}
       </div>
-      <div className="mt-6 flex max-w-[500px] justify-between text-sm">
+      <div className="mt-6 flex max-w-[600px] justify-between text-sm">
         <span className="text-muted">
           {secondsRemaining > 0 ? "Resend available in " : "You can resend now"}
           {secondsRemaining > 0 ? (
