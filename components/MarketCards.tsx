@@ -123,7 +123,50 @@ export function MarketsTable({ limit = 8 }: { limit?: number }) {
   const currentAssets = assets.map((asset) => liveAsset(asset, prices));
   return (
     <div className="surface overflow-hidden">
-      <div className="scrollbar-none overflow-x-auto">
+      <div className="divide-y divide-[var(--border-soft)] md:hidden">
+        {currentAssets.slice(0, limit).map((asset) => (
+          <article
+            data-market-row={`${asset.name} ${asset.symbol}`.toLowerCase()}
+            key={asset.symbol}
+            className="space-y-4 p-4"
+          >
+            <div className="flex min-w-0 items-start justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <CoinBadge asset={asset} small />
+                <div className="min-w-0">
+                  <strong className="block truncate text-sm">{asset.name}</strong>
+                  <span className="text-[10px] text-muted">
+                    #{asset.rank} · {asset.symbol}
+                  </span>
+                </div>
+              </div>
+              <div className="shrink-0 text-right">
+                <strong className="block text-sm">{asset.price}</strong>
+                <span className={`text-xs ${changeClass(asset.change24h)}`}>
+                  {formatChange(asset.change24h)}
+                </span>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2 text-[10px]">
+              <div className="min-w-0">
+                <span className="block text-muted">Market cap</span>
+                <strong className="block truncate font-medium">{asset.marketCap}</strong>
+              </div>
+              <div className="min-w-0">
+                <span className="block text-muted">Volume</span>
+                <strong className="block truncate font-medium">{asset.volume}</strong>
+              </div>
+              <div className="text-right">
+                <span className="block text-muted">7d</span>
+                <strong className={changeClass(asset.change7d)}>
+                  {formatChange(asset.change7d)}
+                </strong>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+      <div className="scrollbar-none hidden overflow-x-auto md:block">
         <table className="w-full min-w-[820px] border-collapse text-left">
           <thead>
             <tr

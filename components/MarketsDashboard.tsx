@@ -54,18 +54,18 @@ export function MarketsDashboard() {
     ? ((livePrices.bitcoin?.marketCap ?? 0) / trackedMarketCap) * 100
     : null;
   return (
-    <div className="container-shell py-10">
+    <div className="container-shell py-7 sm:py-10">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-4xl font-semibold tracking-[-.04em]">
+          <h1 className="text-3xl font-semibold tracking-[-.04em] sm:text-4xl">
             Markets Overview
           </h1>
           <p className="mt-2 text-sm text-muted">
             Real-time market data, trends and analytics
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <label className="relative">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap">
+          <label className="relative min-w-0 flex-1 sm:flex-none">
             <IconSearch
               size={16}
               className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
@@ -74,17 +74,17 @@ export function MarketsDashboard() {
               data-market-search
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="field h-10 min-h-10 w-56 pl-9 pr-3 text-xs"
+              className="field h-10 min-h-10 w-full pl-9 pr-3 text-xs sm:w-56"
               placeholder="Search markets..."
             />
           </label>
-          <button className="ghost-button h-10 min-h-10 w-10 p-0">
+          <button className="ghost-button h-10 min-h-10 w-10 shrink-0 p-0">
             <IconStar size={17} />
           </button>
-          <button className="ghost-button h-10 min-h-10 w-10 p-0">
+          <button className="ghost-button h-10 min-h-10 w-10 shrink-0 p-0">
             <IconBell size={17} />
           </button>
-          <button className="ghost-button h-10 min-h-10 w-10 p-0">
+          <button className="ghost-button h-10 min-h-10 w-10 shrink-0 p-0">
             <IconSettings size={17} />
           </button>
         </div>
@@ -125,9 +125,9 @@ export function MarketsDashboard() {
         </div>
       </div>
       <div className="mt-4 grid gap-4 xl:grid-cols-[1fr_330px]">
-        <section>
+        <section className="min-w-0">
           <div
-            className="mb-3 flex gap-5 border-b text-xs"
+            className="scrollbar-none mb-3 flex max-w-full gap-5 overflow-x-auto border-b text-xs"
             style={{ borderColor: "var(--border)" }}
           >
             {["All Assets", "Crypto", "Indices", "Commodities", "Stocks"].map(
@@ -136,7 +136,7 @@ export function MarketsDashboard() {
                   data-market-tab
                   onClick={() => setTab(t)}
                   key={t}
-                  className={`relative pb-3 ${tab === t ? "text-[var(--amber)]" : "text-muted"}`}
+                  className={`relative shrink-0 pb-3 ${tab === t ? "text-[var(--amber)]" : "text-muted"}`}
                 >
                   {t}
                   {tab === t && (
@@ -154,11 +154,13 @@ export function MarketsDashboard() {
               {filtered.map((a) => (
                 <div
                   key={a.symbol}
-                  className="border-b py-3 text-sm"
+                  className="flex items-center justify-between gap-3 border-b py-3 text-sm"
                   style={{ borderColor: "var(--border)" }}
                 >
-                  {a.name} <span className="text-muted">{a.symbol}</span>
-                  <strong className="float-right">{a.price}</strong>
+                  <span className="min-w-0 truncate">
+                    {a.name} <span className="text-muted">{a.symbol}</span>
+                  </span>
+                  <strong className="shrink-0">{a.price}</strong>
                 </div>
               ))}
             </div>
