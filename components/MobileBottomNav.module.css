@@ -1,0 +1,18 @@
+.navigation {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.sheet {
+  bottom: calc(4.65rem + env(safe-area-inset-bottom));
+  max-height: min(70vh, 520px);
+}
+
+.pageOffset {
+  padding-bottom: calc(5.25rem + env(safe-area-inset-bottom));
+}
+
+@media (min-width: 1024px) {
+  .pageOffset {
+    padding-bottom: 0;
+  }
+}
