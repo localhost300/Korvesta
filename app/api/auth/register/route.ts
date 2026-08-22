@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import {
   enforceRateLimit,
@@ -53,5 +54,15 @@ export async function POST(request: Request) {
   });
   if (error)
     return NextResponse.json({ error: error.message }, { status: 400 });
+  if (!data.session) {
+    (await cookies()).set("korvesta_pending_verification", body.email, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 15 * 60,
+      path: "/",
+      priority: "high",
+    });
+  }
   return NextResponse.json({ ok: true, requiresVerification: !data.session });
 }

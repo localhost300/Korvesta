@@ -27,6 +27,10 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(
         new URL(role === "admin" ? "/admin" : "/dashboard", request.url),
       );
+    if (mfaRoute && nextLevel !== "aal2")
+      return NextResponse.redirect(
+        new URL(role === "admin" ? "/admin" : "/dashboard", request.url),
+      );
     if (adminRoute && role !== "admin")
       return NextResponse.redirect(new URL("/admin-sign-in", request.url));
     if (customerRoute && role !== "customer")

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import {
   enforceRateLimit,
@@ -21,6 +22,12 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "The recovery session is invalid or expired." },
       { status: 401 },
+    );
+  const cookieStore = await cookies();
+  if (!cookieStore.has("korvesta_password_recovery"))
+    return NextResponse.json(
+      { error: "Start a new password-recovery request." },
+      { status: 403 },
     );
   const limited = await enforceRateLimit(
     request,
@@ -47,5 +54,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   await recordSecurityEvent(request, "password_changed", user.id);
   await supabase.auth.signOut({ scope: "others" });
+  cookieStore.delete("korvesta_password_recovery");
   return NextResponse.json({ ok: true });
 }

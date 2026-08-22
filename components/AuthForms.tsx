@@ -259,7 +259,7 @@ export function RegisterForm() {
       );
       return;
     }
-    router.push(`/verify?email=${encodeURIComponent(email)}`);
+    router.push("/verify");
   };
   return (
     <form onSubmit={submit} className="w-full max-w-[610px]">

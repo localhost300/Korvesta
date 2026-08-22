@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import {
   enforceRateLimit,
@@ -16,23 +17,26 @@ export async function POST(request: Request) {
       { status: 503 },
     );
   const body = (await request.json().catch(() => null)) as {
-    email?: string;
     token?: string;
     action?: string;
   } | null;
+  const cookieStore = await cookies();
+  const email = cookieStore
+    .get("korvesta_pending_verification")
+    ?.value.trim()
+    .toLowerCase();
   const limited = await enforceRateLimit(
     request,
     "auth-otp",
     6,
     900,
-    body?.email?.trim().toLowerCase(),
+    email,
   );
   if (limited) return limited;
-  const email = body?.email?.trim().toLowerCase();
   if (!email?.includes("@"))
     return NextResponse.json(
-      { error: "Enter a valid email address." },
-      { status: 400 },
+      { error: "Start registration again to request a verification code." },
+      { status: 401 },
     );
   if (body?.action === "resend") {
     const { error } = await supabase.auth.resend({ type: "signup", email });
@@ -56,6 +60,15 @@ export async function POST(request: Request) {
       { error: "The code is invalid or has expired." },
       { status: 400 },
     );
+  cookieStore.delete("korvesta_pending_verification");
+  cookieStore.set("korvesta_registration_complete", "1", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 5 * 60,
+    path: "/",
+    priority: "high",
+  });
   const verifiedUser = data.user;
   if (verifiedUser?.email) {
     const fullName =
