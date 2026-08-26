@@ -61,6 +61,7 @@ export function PersistentTradingPage({
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
   const refresh = useCallback(async () => {
+    await fetch(`/api/trading/sync?mode=${mode}`, { method: "POST" }).catch(() => null);
     const [a, o, b] = await Promise.all([
       fetch(`/api/trading/account?mode=${mode}`),
       fetch(`/api/trading/orders?mode=${mode}`),
@@ -101,7 +102,9 @@ export function PersistentTradingPage({
             key="cancel"
             className="text-[#ffc400]"
             onClick={async () => {
-              await fetch(`/api/trading/orders/${o.id}`, { method: "DELETE" });
+              const response = await fetch(`/api/trading/orders/${o.id}`, { method: "DELETE" });
+              const result = await response.json().catch(() => ({}));
+              setMessage(response.ok ? "Order cancelled." : (result.error ?? "Cancellation failed."));
               void refresh();
             }}
           >

@@ -6,39 +6,23 @@ import {
   IconCheck,
   IconShieldCheck,
 } from "@tabler/icons-react";
-import { LightweightMarketChart } from "./LightweightMarketChart";
 import { MarketsTable, MoversList } from "./MarketCards";
-import {
-  formatCompactUsd,
-  formatUsd,
-  useLivePrices,
-} from "@/lib/use-live-prices";
+import { Sparkline } from "./Charts";
+import { assets } from "@/lib/data";
 
 export function SignInMarketPanel() {
-  const btc = useLivePrices().prices.bitcoin;
   return (
     <div className="grid gap-4">
       <section className="surface p-5 shadow-[var(--shadow)]">
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold">Market Snapshot</h2>
-          <span className="text-xs text-[#28c76f]">● Live</span>
+          <h2 className="font-semibold">Treasury Snapshot</h2>
+          <span className="text-xs text-muted">Illustrative</span>
         </div>
         <div className="mt-5 flex items-end justify-between">
           <div>
-            <span className="text-xs text-muted">BTC/USDT</span>
+            <span className="text-xs text-muted">US 10-Year Treasury</span>
             <strong className="metric-value mt-1 block text-3xl">
-              {btc ? formatUsd(btc.price).replace("$", "") : "Loading…"}{" "}
-              <small
-                className={
-                  btc?.change24h != null && btc.change24h < 0
-                    ? "text-xs text-[#ff4d43]"
-                    : "text-xs text-[#28c76f]"
-                }
-              >
-                {btc?.change24h == null
-                  ? "—"
-                  : `${btc.change24h >= 0 ? "+" : ""}${btc.change24h.toFixed(2)}%`}
-              </small>
+              4.28% <small className="text-xs text-[#28c76f]">-4 bps</small>
             </strong>
           </div>
         </div>
@@ -52,21 +36,13 @@ export function SignInMarketPanel() {
             </span>
           ))}
         </div>
-        <LightweightMarketChart asset="bitcoin" days={7} height={190} />
+        <Sparkline data={assets[0].data} positive height={190} />
         <div
           className="grid grid-cols-3 gap-3 border-t pt-4 text-xs"
           style={{ borderColor: "var(--border)" }}
         >
           {[
-            ["Current", btc ? formatUsd(btc.price) : "—"],
-            [
-              "Market Cap",
-              btc?.marketCap == null ? "—" : formatCompactUsd(btc.marketCap),
-            ],
-            [
-              "24h Volume",
-              btc?.volume24h == null ? "—" : formatCompactUsd(btc.volume24h),
-            ],
+            ["Yield", "4.28%"], ["Maturity", "10 years"], ["Type", "Treasury"],
           ].map(([l, v]) => (
             <div key={l}>
               <span className="block text-muted">{l}</span>
@@ -76,7 +52,7 @@ export function SignInMarketPanel() {
         </div>
       </section>
       <section className="surface p-5">
-        <h2 className="mb-4 font-semibold">Top Movers (24h)</h2>
+        <h2 className="mb-4 font-semibold">Bond ETF Snapshot</h2>
         <MoversList />
       </section>
     </div>
@@ -187,8 +163,8 @@ export function SuccessPreview() {
           <strong className="mt-2 block">$125.68B</strong>
         </div>
         <div className="surface-soft p-3">
-          <span className="text-[10px] text-muted">BTC Dominance</span>
-          <strong className="mt-2 block">52.41%</strong>
+          <span className="text-[10px] text-muted">10Y–2Y Spread</span>
+          <strong className="mt-2 block">-43 bps</strong>
         </div>
       </div>
       <MarketsTable limit={4} />

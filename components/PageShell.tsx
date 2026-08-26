@@ -1,11 +1,10 @@
 import { Header } from "./Header";
-import { MarketTicker } from "./MarketTicker";
 import { Footer } from "./Footer";
 import mobileStyles from "./MobileBottomNav.module.css";
 
 export function PageShell({
   children,
-  ticker = true,
+  ticker,
   light = false,
 }: {
   children: React.ReactNode;
@@ -17,7 +16,7 @@ export function PageShell({
       className={`app-shell ${mobileStyles.pageOffset} ${light ? "light" : ""}`}
     >
       <Header />
-      {ticker ? <MarketTicker /> : null}
+      {ticker ? null : null}
       <main className="page-enter">{children}</main>
       <Footer />
     </div>

@@ -13,7 +13,7 @@ const statuses: Record<string, string> = {
   EXPIRED_IN_MATCH: "rejected",
 };
 export async function POST(request: Request) {
-  const secret = process.env.TRADING_CRON_SECRET;
+  const secret = process.env.TRADING_CRON_SECRET ?? process.env.CRON_SECRET;
   if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`)
     return NextResponse.json({ error: "Unauthorised." }, { status: 401 });
   const admin = createAdminClient();
@@ -65,3 +65,4 @@ export async function POST(request: Request) {
   }
   return NextResponse.json({ checked: orders?.length ?? 0, updated, failures });
 }
+export { POST as GET };

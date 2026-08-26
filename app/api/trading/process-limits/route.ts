@@ -3,7 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { coinGecko } from "@/lib/providers/coingecko";
 import { tradingAssets } from "@/lib/trading";
 export async function POST(request: Request) {
-  const secret = process.env.TRADING_CRON_SECRET;
+  const secret = process.env.TRADING_CRON_SECRET ?? process.env.CRON_SECRET;
   if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`)
     return NextResponse.json({ error: "Unauthorised." }, { status: 401 });
   const admin = createAdminClient();
@@ -40,3 +40,4 @@ export async function POST(request: Request) {
   }
   return NextResponse.json({ checked: orders?.length ?? 0, filled });
 }
+export { POST as GET };

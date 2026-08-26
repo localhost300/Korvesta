@@ -8,18 +8,18 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
   ),
   title: {
-    default: "Korvesta | Smarter Market Intelligence",
+    default: "Korvesta | Bonds, Treasuries & ETFs",
     template: "%s | Korvesta",
   },
   description:
-    "Professional-grade market data, actionable insight and trading education.",
+    "Clear research and education for Treasury bonds, fixed income and ETFs.",
   applicationName: "Korvesta",
   openGraph: {
     type: "website",
     siteName: "Korvesta",
-    title: "Korvesta | Smarter Market Intelligence",
+    title: "Korvesta | Bonds, Treasuries & ETFs",
     description:
-      "Professional-grade market data, actionable insight and trading education.",
+      "Clear research and education for Treasury bonds, fixed income and ETFs.",
   },
   robots: { index: true, follow: true },
 };

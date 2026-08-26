@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 export async function POST(request: Request) {
-  const secret = process.env.INVESTMENT_CRON_SECRET;
+  const secret = process.env.INVESTMENT_CRON_SECRET ?? process.env.CRON_SECRET;
   if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`)
     return NextResponse.json({ error: "Unauthorised." }, { status: 401 });
   const admin = createAdminClient();
@@ -17,3 +17,4 @@ export async function POST(request: Request) {
     ? NextResponse.json({ error: error.message }, { status: 500 })
     : NextResponse.json({ data });
 }
+export { POST as GET };

@@ -6,6 +6,7 @@ import {
 } from "@/lib/security/request";
 import { requireActiveCustomer } from "@/lib/security/account-status";
 import { sendTransactionalEmail } from "@/lib/email";
+import { createAdminClient } from "@/lib/supabase/admin";
 export async function GET() {
   const supabase = await createClient();
   if (!supabase)
@@ -21,6 +22,8 @@ export async function GET() {
       { error: "Authentication required." },
       { status: 401 },
     );
+  const admin = createAdminClient();
+  if (admin) await admin.rpc("accrue_fixed_investments", { run_date: new Date().toISOString().slice(0, 10) });
   const [plans, positions] = await Promise.all([
     supabase
       .from("investment_plans")

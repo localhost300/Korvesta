@@ -17,12 +17,6 @@ import {
 import { assets } from "@/lib/data";
 import { changeClass, formatChange } from "@/lib/utils";
 import { Sparkline } from "./Charts";
-import {
-  coinGeckoIdBySymbol,
-  formatCompactUsd,
-  formatUsd,
-  useLivePrices,
-} from "@/lib/use-live-prices";
 
 const tools = [
   {
@@ -121,30 +115,11 @@ function ResultCard({
 export function TradeToolsExperience() {
   const [balance, setBalance] = useState(10000);
   const [riskPercent, setRiskPercent] = useState(1);
-  const [entryPrice, setEntryPrice] = useState(68247.21);
-  const [stopPrice, setStopPrice] = useState(67100);
-  const [targetPrice, setTargetPrice] = useState(70541.63);
+  const [entryPrice, setEntryPrice] = useState(92.35);
+  const [stopPrice, setStopPrice] = useState(89.5);
+  const [targetPrice, setTargetPrice] = useState(97.25);
   const [search, setSearch] = useState("");
-  const { prices, loading, error } = useLivePrices();
-
-  const liveAssets = useMemo(
-    () =>
-      assets.slice(0, 6).map((asset) => {
-        const live = prices[coinGeckoIdBySymbol[asset.symbol]];
-        return live
-          ? {
-              ...asset,
-              price: formatUsd(live.price),
-              change24h: live.change24h ?? asset.change24h,
-              volume:
-                live.volume24h == null
-                  ? asset.volume
-                  : formatCompactUsd(live.volume24h),
-            }
-          : asset;
-      }),
-    [prices],
-  );
+  const liveAssets = assets.slice(0, 6);
 
   const calculation = useMemo(() => {
     const riskAmount = balance * (riskPercent / 100);
@@ -219,7 +194,7 @@ export function TradeToolsExperience() {
               </p>
             </div>
             <span className="rounded-lg bg-[rgba(255,196,0,.1)] px-3 py-2 text-xs font-semibold text-[var(--amber)]">
-              BTC / USDT
+              TLT · Treasury Bond ETF
             </span>
           </div>
 
@@ -266,7 +241,7 @@ export function TradeToolsExperience() {
             />
             <ResultCard
               label="Position size"
-              value={`${calculation.positionSize.toFixed(5)} BTC`}
+              value={`${calculation.positionSize.toFixed(2)} shares`}
             />
             <ResultCard
               label="Position value"
@@ -344,11 +319,7 @@ export function TradeToolsExperience() {
               <h2 className="text-xl font-semibold">Market Screener</h2>
             </div>
             <p className="mt-1 text-xs text-muted">
-              {error
-                ? "Live prices are temporarily unavailable; showing cached fallbacks."
-                : loading
-                  ? "Loading the latest CoinGecko prices…"
-                  : "Live CoinGecko prices, changes and 24-hour volume."}
+              Illustrative bond and ETF reference data. Confirm current prices before investing.
             </p>
           </div>
 
@@ -399,7 +370,7 @@ export function TradeToolsExperience() {
                             {asset.name}
                           </strong>
                           <span className="text-[10px] text-muted">
-                            {asset.symbol}/USDT
+                            {asset.symbol}
                           </span>
                         </div>
                       </div>
@@ -456,9 +427,9 @@ export function TradeToolsExperience() {
             connection is added.
           </p>
         </div>
-        <button type="button" className="gold-button text-xs">
-          Create Price Alert
-        </button>
+        <a href="mailto:management@korvesta.com?subject=Bond%20or%20ETF%20price%20alert" className="gold-button text-xs">
+          Request Price Alert
+        </a>
       </div>
     </div>
   );
