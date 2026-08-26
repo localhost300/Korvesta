@@ -1,8 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
-    { "path": "/api/trading/process-limits", "schedule": "* * * * *" },
-    { "path": "/api/trading/reconcile", "schedule": "* * * * *" },
+    { "path": "/api/trading/process-limits", "schedule": "1 0 * * *" },
+    { "path": "/api/trading/reconcile", "schedule": "3 0 * * *" },
     { "path": "/api/investments/accrue", "schedule": "5 0 * * *" }
   ]
 }

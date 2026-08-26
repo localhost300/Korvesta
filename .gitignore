@@ -10,3 +10,6 @@ dist/
 implementation-*.png
 source-sign-in.png
 sign-in-comparison.png
+
+.vercel
+.env*
