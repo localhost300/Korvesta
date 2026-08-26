@@ -427,7 +427,7 @@ export function TradeToolsExperience() {
             connection is added.
           </p>
         </div>
-        <a href="mailto:management@korvesta.com?subject=Bond%20or%20ETF%20price%20alert" className="gold-button text-xs">
+        <a href="mailto:management@korvesta.org?subject=Bond%20or%20ETF%20price%20alert" className="gold-button text-xs">
           Request Price Alert
         </a>
       </div>

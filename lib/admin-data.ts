@@ -53,7 +53,7 @@ export const adminOverviewSeries = [118, 124, 121, 132, 139, 145, 142, 153, 161,
 export const revenueSeries = [42, 46, 44, 51, 49, 58, 61, 59, 67, 72, 70, 78, 82, 87, 91, 98, 104, 111, 119, 128];
 
 export const initialCustomers: AdminCustomer[] = [
-  { id: "KRV-10482", name: "Alex Johnson", email: "alex@korvesta.com", country: "Nigeria", joined: "12 Jun 2024", tier: "Pro", kyc: "Verified", status: "Active", portfolio: 248420.5, investment: 168240.7, trading: 78920.3, staking: 11259.5 },
+  { id: "KRV-10482", name: "Alex Johnson", email: "alex@korvesta.org", country: "Nigeria", joined: "12 Jun 2024", tier: "Pro", kyc: "Verified", status: "Active", portfolio: 248420.5, investment: 168240.7, trading: 78920.3, staking: 11259.5 },
   { id: "KRV-10481", name: "Amara Okafor", email: "amara.okafor@email.com", country: "Nigeria", joined: "11 Jun 2024", tier: "VIP", kyc: "Verified", status: "Active", portfolio: 412850.25, investment: 295600, trading: 98240.25, staking: 19010 },
   { id: "KRV-10480", name: "Daniel Mensah", email: "daniel.mensah@email.com", country: "Ghana", joined: "11 Jun 2024", tier: "Standard", kyc: "Pending", status: "Restricted", portfolio: 18420.8, investment: 12000, trading: 6420.8, staking: 0 },
   { id: "KRV-10479", name: "Thandi Mokoena", email: "thandi.m@email.com", country: "South Africa", joined: "10 Jun 2024", tier: "Pro", kyc: "Verified", status: "Active", portfolio: 126940.4, investment: 88200, trading: 30120.4, staking: 8620 },

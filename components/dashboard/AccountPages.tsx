@@ -447,7 +447,7 @@ export function SettingsPage() {
               <div>
                 <h2 className="text-xl font-semibold">Alex Johnson</h2>
                 <p className="mt-1 text-sm text-[#ffc400]">Pro Trader</p>
-                <p className="mt-1 text-xs text-[#7f8b93]">alex@korvesta.com</p>
+                <p className="mt-1 text-xs text-[#7f8b93]">alex@korvesta.org</p>
               </div>
             </div>
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
