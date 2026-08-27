@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Card, DataTable, PageHeading, Segmented, Status } from "./DashboardUI";
+import { Card, DataTable, PageHeading, Status } from "./DashboardUI";
 import { LightweightMarketChart } from "@/components/LightweightMarketChart";
 import { tradingAssets } from "@/lib/trading";
 
@@ -118,7 +118,7 @@ export function PersistentTradingPage({
       ]),
     [orders, refresh],
   );
-  async function submit() {
+  async function submit(orderSide: "buy" | "sell" = side as "buy" | "sell") {
     setPending(true);
     setMessage("");
     const response = await fetch("/api/trading/orders", {
@@ -129,7 +129,7 @@ export function PersistentTradingPage({
         product,
         leverage: product === "futures" ? Number(leverage) : undefined,
         symbol,
-        side,
+        side: orderSide,
         type,
         quantity: Number(quantity),
         limitPrice: ["limit", "stop_limit"].includes(type)
@@ -150,22 +150,19 @@ export function PersistentTradingPage({
   }
   return (
     <>
-      <PageHeading
-        title={product === "demo" ? "Demo Trading" : product === "futures" ? "Futures Trading" : "Spot Trading"}
-        subtitle={product === "demo" ? "Practice with a separate simulated balance and Korvesta order engine." : product === "futures" ? "Trade perpetual contracts through the Korvesta margin and risk engine." : "Buy and sell assets through the Korvesta spot order engine."}
-      />
-      <div className="mb-4 flex flex-wrap gap-3">
+      <section className="mb-2 flex flex-wrap items-center gap-3 rounded-xl border border-[#202a31] bg-[#0a1014] px-4 py-3">
+        <div><h1 className="text-lg font-semibold">{product === "demo" ? "Demo Trading" : product === "futures" ? "Futures Trading" : "Spot Trading"}</h1><p className="text-[10px] text-[#849099]">{symbol}/USDT · Korvesta terminal</p></div>
         <Status tone={product === "demo" ? "yellow" : "green"}>{product === "demo" ? "Simulation" : "Korvesta engine"}</Status>
-        <span className="rounded-lg border border-[#263038] px-3 py-2 text-xs">
-          Cash: ${Number(account?.account.cash_balance ?? 0).toLocaleString()}
+        <span className="ml-auto rounded-lg border border-[#263038] px-3 py-2 text-xs">
+          Cash <b className="ml-1">${Number(account?.account.cash_balance ?? 0).toLocaleString()}</b>
         </span>
         <span className="rounded-lg border border-[#263038] px-3 py-2 text-xs">
-          Equity: ${(account?.equity ?? 0).toLocaleString()}
+          Equity <b className="ml-1">${(account?.equity ?? 0).toLocaleString()}</b>
         </span>
-      </div>
-      <div className="grid items-start gap-3 xl:grid-cols-[minmax(0,1fr)_330px]">
+      </section>
+      <div className="grid items-start gap-2 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-4">
-          <Card>
+          <div className="rounded-xl border border-[#202a31] bg-[#0a1014] p-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
@@ -180,8 +177,8 @@ export function PersistentTradingPage({
                 ))}
               </div>
             </div>
-            <LightweightMarketChart asset={tradingAssets[symbol as keyof typeof tradingAssets]} days={chartDays} height={560} />
-          </Card>
+            <LightweightMarketChart asset={tradingAssets[symbol as keyof typeof tradingAssets]} days={chartDays} height={620} />
+          </div>
           <Card title={`${symbol}/USDT Order Book`}>
             <div className="grid grid-cols-2 gap-6 text-xs">
               <div>
@@ -232,7 +229,7 @@ export function PersistentTradingPage({
             />
           </Card>
         </div>
-        <Card title="Order ticket">
+        <Card className="xl:sticky xl:top-[76px]" title="Order ticket">
           <label className="text-xs">
             Market
             <select
@@ -245,19 +242,10 @@ export function PersistentTradingPage({
               ))}
             </select>
           </label>
-          <div className="mt-4">
-            <Segmented
-              options={["buy", "sell"]}
-              value={side}
-              onChange={setSide}
-            />
-          </div>
-          <div className="mt-4">
-            <Segmented
-              options={["market", "limit", "stop_market", "stop_limit"]}
-              value={type}
-              onChange={setType}
-            />
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            {["market", "limit", "stop_market", "stop_limit"].map((orderType) => (
+              <button key={orderType} type="button" onClick={() => setType(orderType)} className={`rounded-lg border px-2 py-2 text-[11px] capitalize ${type === orderType ? "border-[#ffc400] bg-[#ffc40018] text-[#ffc400]" : "border-[#263038] text-[#849099]"}`}>{orderType.replace("_", " ")}</button>
+            ))}
           </div>
           <label className="mt-4 block text-xs">
             Quantity
@@ -302,13 +290,10 @@ export function PersistentTradingPage({
               </select>
             </label>
           ) : null}
-          <button
-            disabled={pending || (product !== "demo" && !canLive)}
-            onClick={() => void submit()}
-            className={`mt-5 min-h-12 w-full rounded-lg font-semibold disabled:opacity-50 ${side === "buy" ? "bg-[#00d084] text-black" : "bg-[#ef4444] text-white"}`}
-          >
-            {pending ? "Submitting…" : `${side.toUpperCase()} ${symbol}`}
-          </button>
+          <div className="mt-5 grid grid-cols-2 gap-2">
+            <button disabled={pending || (product !== "demo" && !canLive)} onClick={() => { setSide("buy"); void submit("buy"); }} className="min-h-14 rounded-lg bg-[#20bf63] font-bold text-white shadow-[0_0_22px_#20bf6330] disabled:opacity-50">{pending ? "WAIT…" : `↑ BUY ${symbol}`}</button>
+            <button disabled={pending || (product !== "demo" && !canLive)} onClick={() => { setSide("sell"); void submit("sell"); }} className="min-h-14 rounded-lg bg-[#f04444] font-bold text-white shadow-[0_0_22px_#f0444430] disabled:opacity-50">{pending ? "WAIT…" : `↓ SELL ${symbol}`}</button>
+          </div>
           {message ? (
             <p role="status" className="mt-3 text-xs text-[#ffc400]">
               {message}
