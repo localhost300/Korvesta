@@ -19,11 +19,11 @@ function CurrentPage() {
   if (pathname === "/dashboard/portfolio") return <FixedInvestmentPage />;
   if (pathname === "/dashboard/markets") return <RealMarketsPage />;
   if (pathname === "/dashboard/trade/futures")
-    return <PersistentTradingPage futures />;
+    return <PersistentTradingPage product="futures" />;
   if (pathname === "/dashboard/trade/demo")
-    return <PersistentTradingPage initialMode="paper" />;
+    return <PersistentTradingPage product="demo" />;
   if (pathname === "/dashboard/trade")
-    return <PersistentTradingPage initialMode="live" />;
+    return <PersistentTradingPage product="spot" />;
   if (pathname.startsWith("/dashboard/ai-trading"))
     return (
       <UnavailableFinancialFeature

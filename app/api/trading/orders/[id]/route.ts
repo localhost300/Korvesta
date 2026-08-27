@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { cancelBinanceOrder } from "@/lib/providers/binance";
 import { rejectCrossSiteMutation } from "@/lib/security/request";
 import { requireActiveCustomer } from "@/lib/security/account-status";
 export async function DELETE(
@@ -41,35 +40,7 @@ export async function DELETE(
       { error: "Open order not found." },
       { status: 404 },
     );
-  if (order.provider === "binance") {
-    if (!order.external_order_id)
-      return NextResponse.json(
-        {
-          error: "Provider order ID is missing; reconcile before cancellation.",
-        },
-        { status: 409 },
-      );
-    try {
-      await cancelBinanceOrder(
-        order.pair.replace("/", ""),
-        order.external_order_id,
-      );
-      const result = await supabase.rpc("set_live_order_cancelled", {
-        order_id: id,
-      });
-      if (result.error) throw new Error(result.error.message);
-      return NextResponse.json({ ok: true });
-    } catch (error) {
-      return NextResponse.json(
-        {
-          error:
-            error instanceof Error ? error.message : "Cancellation failed.",
-        },
-        { status: 400 },
-      );
-    }
-  }
-  const { data, error } = await supabase.rpc("cancel_paper_order", {
+  const { data, error } = await supabase.rpc("cancel_korvesta_order", {
     order_id: id,
   });
   return error

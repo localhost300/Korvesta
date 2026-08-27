@@ -42,7 +42,7 @@ type NavItem = {
 
 const navigation: NavItem[] = [
   { label: "Overview", href: "/dashboard", icon: IconDashboard },
-  { label: "Portfolio", href: "/dashboard/portfolio", icon: IconBriefcase },
+  { label: "Investment Portfolio", href: "/dashboard/portfolio", icon: IconBriefcase },
   { label: "Markets", href: "/dashboard/markets", icon: IconChartCandle },
   {
     label: "Trade",
@@ -85,6 +85,7 @@ const navigation: NavItem[] = [
 
 function NavContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   return (
     <nav
       className="flex-1 overflow-y-auto px-3 py-4 scrollbar-none"
@@ -97,18 +98,24 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
           : pathname === item.href || pathname.startsWith(`${item.href}/`);
         return (
           <div key={item.label} className="mb-1">
-            <Link
-              href={item.href}
-              onClick={onNavigate}
-              className={clsx("dash-nav-item", active && "dash-nav-active")}
-            >
-              <item.icon size={18} stroke={1.8} />
-              <span>{item.label}</span>
-              {item.children && (
-                <IconChevronDown size={14} className="ml-auto" />
-              )}
-            </Link>
-            {item.children && active && (
+            {item.children ? (
+              <button
+                type="button"
+                onClick={() => setExpanded((current) => ({ ...current, [item.href]: !(current[item.href] ?? active) }))}
+                className={clsx("dash-nav-item w-full", active && "dash-nav-active")}
+                aria-expanded={expanded[item.href] ?? active}
+              >
+                <item.icon size={18} stroke={1.8} />
+                <span>{item.label}</span>
+                <IconChevronDown size={14} className={clsx("ml-auto transition-transform", (expanded[item.href] ?? active) && "rotate-180")} />
+              </button>
+            ) : (
+              <Link href={item.href} onClick={onNavigate} className={clsx("dash-nav-item", active && "dash-nav-active")}>
+                <item.icon size={18} stroke={1.8} />
+                <span>{item.label}</span>
+              </Link>
+            )}
+            {item.children && (expanded[item.href] ?? active) && (
               <div className="ml-[25px] border-l border-[#222c32] py-1 pl-3">
                 {item.children.map(([label, href]) => (
                   <Link

@@ -24,13 +24,6 @@ create policy investment_plans_read on public.investment_plans for select using(
 create policy own_investment_positions on public.investment_positions for select using(user_id=auth.uid() or public.is_staff());
 create policy own_investment_accruals on public.investment_accruals for select using(exists(select 1 from public.investment_positions p where p.id=position_id and (p.user_id=auth.uid() or public.is_staff())));
 
-insert into public.investment_plans(name,description,apy_bps,duration_days,minimum_amount,maximum_amount) values
- ('Starter Fixed','Simple fixed APY accrued daily for 30 days.',550,30,100,10000),
- ('Growth Fixed','Simple fixed APY accrued daily for 90 days.',1080,90,1000,50000),
- ('Balanced Fixed','Simple fixed APY accrued daily for 180 days.',1540,180,2500,100000),
- ('Long-Term Fixed','Simple fixed APY accrued daily for 365 days.',2250,365,10000,250000)
-on conflict(name) do nothing;
-
 create or replace function public.subscribe_fixed_investment(requested_plan uuid,requested_amount numeric,request_key text)
 returns public.investment_positions language plpgsql security definer set search_path='' as $$
 declare plan public.investment_plans; usdt uuid; available uuid; invested uuid; balance numeric; tx uuid; result public.investment_positions;

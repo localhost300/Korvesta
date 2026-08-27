@@ -5,7 +5,6 @@ import {
   DataTable,
   MetricCard,
   PageHeading,
-  Status,
 } from "./DashboardUI";
 import {
   coinGeckoIdBySymbol,
@@ -21,6 +20,26 @@ const assets = [
   { symbol: "BNB", name: "BNB", colour: "#f3ba2f" },
   { symbol: "XRP", name: "XRP", colour: "#64748b" },
 ];
+const traditionalMarkets = {
+  Bonds: [
+    ["US 3-Month Treasury Bill", "UST-3M", "Government", "3 months"],
+    ["US 2-Year Treasury Note", "UST-2Y", "Government", "2 years"],
+    ["US 10-Year Treasury Note", "UST-10Y", "Government", "10 years"],
+    ["US 30-Year Treasury Bond", "UST-30Y", "Government", "30 years"],
+  ],
+  ETFs: [
+    ["Vanguard Total Bond Market ETF", "BND", "Bond ETF", "US aggregate bonds"],
+    ["iShares Core US Aggregate Bond ETF", "AGG", "Bond ETF", "US aggregate bonds"],
+    ["SPDR S&P 500 ETF Trust", "SPY", "Equity ETF", "Large-cap US stocks"],
+    ["Invesco QQQ Trust", "QQQ", "Equity ETF", "Nasdaq-100"],
+  ],
+  Stocks: [
+    ["Apple", "AAPL", "Technology", "NASDAQ"],
+    ["Microsoft", "MSFT", "Technology", "NASDAQ"],
+    ["NVIDIA", "NVDA", "Technology", "NASDAQ"],
+    ["Tesla", "TSLA", "Automotive", "NASDAQ"],
+  ],
+} as const;
 export function RealMarketsPage() {
   const { prices, loading, error } = useLivePrices();
   const rows = assets.flatMap((asset) => {
@@ -61,7 +80,7 @@ export function RealMarketsPage() {
     <>
       <PageHeading
         title="Markets"
-        subtitle="Live price, market-cap, and volume data from CoinGecko."
+        subtitle="Explore bonds, ETFs, stocks, and digital assets from one market directory."
       />
       {error && (
         <p className="mb-4 rounded-lg border border-red-500/30 p-3 text-sm text-red-400">
@@ -84,13 +103,19 @@ export function RealMarketsPage() {
           value={cap ? `${((btc / cap) * 100).toFixed(2)}%` : "—"}
           change="Share of tracked market cap"
         />
-        <MetricCard
-          label="Data source"
-          value="CoinGecko"
-          change="Refreshes every 30 seconds"
-        />
+        <MetricCard label="Market coverage" value="4 classes" change="Bonds, ETFs, stocks, and crypto" />
       </div>
-      <Card className="mt-4" title="Live cryptocurrency market">
+      <div className="mt-4 grid gap-4 xl:grid-cols-3">
+        {Object.entries(traditionalMarkets).map(([category, instruments]) => (
+          <Card key={category} title={category}>
+            <DataTable
+              headers={["Instrument", "Symbol", "Type", "Market"]}
+              rows={instruments.map(([name, symbol, type, market]) => [name, <b key={symbol}>{symbol}</b>, type, market])}
+            />
+          </Card>
+        ))}
+      </div>
+      <Card className="mt-4" title="Digital assets">
         {rows.length ? (
           <DataTable
             headers={[
@@ -108,16 +133,6 @@ export function RealMarketsPage() {
             {loading ? "Loading live markets…" : "Market data is unavailable."}
           </p>
         )}
-      </Card>
-      <Card className="mt-4" title="Data scope">
-        <div className="flex items-center gap-3 text-sm">
-          <Status tone="green">Live</Status>
-          <p className="text-[#819099]">
-            No sentiment score, trending ranking, new-listing claim, or
-            historical chart is displayed unless the provider supplies that
-            dataset.
-          </p>
-        </div>
       </Card>
     </>
   );

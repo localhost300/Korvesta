@@ -83,8 +83,8 @@ export function FixedInvestmentPage() {
   return (
     <>
       <PageHeading
-        title="Fixed APY Investments"
-        subtitle="Simple, non-compounding APY accrued daily and recorded in the financial ledger."
+        title="Investment Portfolio"
+        subtitle="View available investment options and track investments created from your account."
       />
       <div className="mb-4 grid gap-4 sm:grid-cols-3">
         <Card>
@@ -104,6 +104,14 @@ export function FixedInvestmentPage() {
           </b>
         </Card>
       </div>
+      {!plans.length ? (
+        <Card className="mt-4">
+          <div className="py-8 text-center">
+            <h2 className="font-semibold">No investment options available</h2>
+            <p className="mt-2 text-sm text-[#849099]">Investment options will appear here after an administrator creates and activates them.</p>
+          </div>
+        </Card>
+      ) : null}
       <div className="grid gap-4 lg:grid-cols-2">
         {plans.map((plan) => (
           <Card key={plan.id} title={plan.name}>
@@ -150,7 +158,7 @@ export function FixedInvestmentPage() {
         </p>
       ) : null}
       <Card className="mt-4" title="My Investments">
-        <DataTable
+        {positions.length ? <DataTable
           headers={[
             "Plan",
             "Principal",
@@ -186,7 +194,7 @@ export function FixedInvestmentPage() {
               "—"
             ),
           ])}
-        />
+        /> : <p className="py-8 text-center text-sm text-[#849099]">You have not made any investments yet.</p>}
       </Card>
       <Card className="mt-4">
         <p className="text-xs leading-6 text-[#849099]">

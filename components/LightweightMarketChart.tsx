@@ -5,6 +5,7 @@ import {
   CandlestickSeries,
   ColorType,
   CrosshairMode,
+  LineSeries,
   createChart,
   type UTCTimestamp,
 } from "lightweight-charts";
@@ -74,6 +75,19 @@ export function LightweightMarketChart({
       priceLineColor: "rgba(255,196,0,.55)",
       priceLineStyle: 2,
     });
+    const movingAverage = chart.addSeries(LineSeries, {
+      color: "#9bd51a",
+      lineWidth: 2,
+      priceLineVisible: false,
+      lastValueVisible: false,
+    });
+    const rsi = chart.addSeries(LineSeries, {
+      color: "#ffc400",
+      lineWidth: 2,
+      priceLineVisible: false,
+      lastValueVisible: true,
+      priceFormat: { type: "price", precision: 0, minMove: 1 },
+    }, 1);
     const controller = new AbortController();
     fetch(`/api/market/ohlc?asset=${encodeURIComponent(asset)}&days=${days}`, {
       signal: controller.signal,
@@ -81,8 +95,7 @@ export function LightweightMarketChart({
       .then((response) => response.json().then((body) => ({ response, body })))
       .then(({ response, body }) => {
         if (!response.ok) throw new Error(body.error);
-        series.setData(
-          body.data.map(
+        const candles = body.data.map(
             (candle: {
               time: number;
               open: number;
@@ -90,8 +103,24 @@ export function LightweightMarketChart({
               low: number;
               close: number;
             }) => ({ ...candle, time: candle.time as UTCTimestamp }),
-          ),
-        );
+          );
+        series.setData(candles);
+        movingAverage.setData(candles.flatMap((candle: {time: UTCTimestamp; close: number}, index: number) => {
+          if (index < 9) return [];
+          const average = candles.slice(index - 9, index + 1).reduce((sum: number, item: {close: number}) => sum + item.close, 0) / 10;
+          return [{ time: candle.time, value: average }];
+        }));
+        const closes = candles.map((candle: {close: number}) => candle.close);
+        rsi.setData(candles.flatMap((candle: {time: UTCTimestamp}, index: number) => {
+          if (index < 14) return [];
+          let gains = 0; let losses = 0;
+          for (let i = index - 13; i <= index; i++) { const change = closes[i] - closes[i - 1]; if (change >= 0) gains += change; else losses -= change; }
+          const value = losses === 0 ? 100 : 100 - 100 / (1 + gains / losses);
+          return [{ time: candle.time, value }];
+        }));
+        chart.priceScale("right", 1).applyOptions({ scaleMargins: { top: 0.12, bottom: 0.12 } });
+        const panes = chart.panes();
+        if (panes[1]) panes[1].setHeight(105);
         chart.timeScale().fitContent();
         setMessage("");
       })
@@ -115,6 +144,12 @@ export function LightweightMarketChart({
         className="w-full"
         aria-label={`${asset} interactive candlestick chart`}
       />
+      {!message ? (
+        <div className="pointer-events-none absolute left-3 top-3 flex gap-2 text-[10px] font-semibold">
+          <span className="rounded bg-[#11181ddd] px-2 py-1 text-[#9bd51a]">MA 10</span>
+          <span className="rounded bg-[#11181ddd] px-2 py-1 text-[#ffc400]">RSI 14</span>
+        </div>
+      ) : null}
       {message ? (
         <p
           role="status"

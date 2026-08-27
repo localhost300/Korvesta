@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { coinGecko } from "@/lib/providers/coingecko";
-import { executionStatus, getBinanceAccount } from "@/lib/providers/binance";
 import { tradingAssets } from "@/lib/trading";
 export async function GET(request: Request) {
   const supabase = await createClient();
@@ -18,36 +17,9 @@ export async function GET(request: Request) {
       { error: "Authentication required." },
       { status: 401 },
     );
-  const mode =
-    new URL(request.url).searchParams.get("mode") === "live" ? "live" : "paper";
-  const execution = executionStatus();
-  let exchangeBalances: Array<{ asset: string; free: number; locked: number }> =
-    [];
-  if (mode === "live" && execution.configured) {
-    if (!execution.testnet) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-      if (profile?.role !== "admin")
-        return NextResponse.json(
-          { error: "Mainnet balances are restricted to administrators." },
-          { status: 403 },
-        );
-    }
-    try {
-      const remote = await getBinanceAccount();
-      exchangeBalances = (Array.isArray(remote.balances) ? remote.balances : [])
-        .map((item) => item as Record<string, string>)
-        .map((item) => ({
-          asset: item.asset,
-          free: Number(item.free),
-          locked: Number(item.locked),
-        }))
-        .filter((item) => item.free > 0 || item.locked > 0);
-    } catch {}
-  }
+  const product = new URL(request.url).searchParams.get("product") ?? "spot";
+  const mode = product === "demo" ? "paper" : "live";
+  const execution = { enabled: true, configured: true, testnet: false, provider: "korvesta" };
   const { data: account, error } = await supabase.rpc(
     "ensure_trading_account",
     { requested_mode: mode },
@@ -84,6 +56,5 @@ export async function GET(request: Request) {
     equity:
       Number(account.cash_balance) + enriched.reduce((s, p) => s + p.value, 0),
     execution,
-    exchangeBalances,
   });
 }

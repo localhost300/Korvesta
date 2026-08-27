@@ -6,6 +6,7 @@ export const tradingAssets = {
   XRP: "ripple",
 } as const;
 export type TradingSymbol = keyof typeof tradingAssets;
+export type TradingProduct = "spot" | "futures" | "demo";
 export type TradingMode = "paper" | "live";
 export type TradingOrderInput = {
   symbol: TradingSymbol;
@@ -16,6 +17,8 @@ export type TradingOrderInput = {
   stopPrice?: number;
   idempotencyKey: string;
   mode: TradingMode;
+  product: TradingProduct;
+  leverage?: number;
 };
 
 export type BinanceSymbolFilter = {
@@ -100,7 +103,11 @@ export function parseOrderInput(value: unknown): TradingOrderInput {
   const limitPrice =
     body.limitPrice == null ? undefined : Number(body.limitPrice);
   const stopPrice = body.stopPrice == null ? undefined : Number(body.stopPrice);
-  const mode = body.mode === "live" ? "live" : "paper";
+  const product = ["spot", "futures", "demo"].includes(String(body.product))
+    ? (body.product as TradingProduct)
+    : body.mode === "paper" ? "demo" : "spot";
+  const mode: TradingMode = product === "demo" ? "paper" : "live";
+  const leverage = product === "futures" ? Number(body.leverage ?? 1) : undefined;
   const idempotencyKey = String(body.idempotencyKey ?? "").trim();
   if (
     !(symbol in tradingAssets) ||
@@ -113,7 +120,9 @@ export function parseOrderInput(value: unknown): TradingOrderInput {
       (!limitPrice || limitPrice <= 0)) ||
     (type.startsWith("stop_") && (!stopPrice || stopPrice <= 0)) ||
     idempotencyKey.length < 8 ||
-    idempotencyKey.length > 100
+    idempotencyKey.length > 100 ||
+    (product === "futures" &&
+      (!Number.isInteger(leverage) || leverage! < 1 || leverage! > 20))
   )
     throw new Error("Invalid order request.");
   return {
@@ -125,5 +134,7 @@ export function parseOrderInput(value: unknown): TradingOrderInput {
     stopPrice,
     idempotencyKey,
     mode,
+    product,
+    leverage,
   };
 }

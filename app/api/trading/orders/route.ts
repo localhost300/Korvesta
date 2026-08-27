@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { coinGecko } from "@/lib/providers/coingecko";
-import { executionStatus, placeBinanceOrder } from "@/lib/providers/binance";
 import { parseOrderInput, tradingAssets } from "@/lib/trading";
 import { rejectCrossSiteMutation } from "@/lib/security/request";
 import { requireActiveCustomer } from "@/lib/security/account-status";
@@ -21,8 +20,8 @@ export async function GET(request: Request) {
       { error: "Authentication required." },
       { status: 401 },
     );
-  const mode =
-    new URL(request.url).searchParams.get("mode") === "live" ? "live" : "paper";
+  const product = new URL(request.url).searchParams.get("product") ?? "spot";
+  const mode = product === "demo" ? "paper" : "live";
   const { data: account, error: accountError } = await supabase.rpc(
     "ensure_trading_account",
     { requested_mode: mode },
@@ -35,6 +34,7 @@ export async function GET(request: Request) {
       "id,pair,side,order_type,quantity,executed_quantity,limit_price,stop_price,triggered_at,fill_price,fee,status,provider,external_order_id,provider_updated_at,created_at,filled_at",
     )
     .eq("account_id", account.id)
+    .eq("product", product)
     .order("created_at", { ascending: false })
     .limit(100);
   return error
@@ -110,112 +110,39 @@ export async function POST(request: Request) {
   if (!asset)
     return NextResponse.json({ error: "Unsupported asset." }, { status: 400 });
   try {
-    if (input.mode === "paper") {
+    {
       const market = await coinGecko.prices([tradingAssets[input.symbol]]);
       const price = market[tradingAssets[input.symbol]]?.price;
       if (!price) throw new Error("A current market price is unavailable.");
-      const procedure = input.type.startsWith("stop_")
-        ? "place_paper_stop_order"
-        : "place_paper_order";
-      const parameters = input.type.startsWith("stop_")
-        ? {
+      if (input.product === "futures") {
+        if (input.type !== "market") throw new Error("Futures limit and stop orders are not enabled yet.");
+        const { data, error } = await supabase.rpc("place_korvesta_futures_order", {
+          asset: asset.id,
+          requested_side: input.side,
+          requested_quantity: input.quantity,
+          market_price: price,
+          requested_leverage: input.leverage,
+          request_key: input.idempotencyKey,
+          fee_rate: 0.0005,
+        });
+        if (error) throw new Error(error.message);
+        return NextResponse.json({ data, engine: "korvesta" }, { status: 201 });
+      }
+      if (input.type.startsWith("stop_")) throw new Error("Stop orders are temporarily unavailable in the Korvesta engine.");
+      const { data, error } = await supabase.rpc("place_korvesta_spot_order", {
             asset: asset.id,
             requested_side: input.side,
             requested_type: input.type,
             requested_quantity: input.quantity,
-            requested_stop: input.stopPrice,
             requested_limit: input.limitPrice ?? null,
             market_price: price,
             request_key: input.idempotencyKey,
-          }
-        : {
-            asset: asset.id,
-            requested_side: input.side,
-            requested_type: input.type,
-            requested_quantity: input.quantity,
-            requested_limit: input.limitPrice ?? null,
-            market_price: price,
-            request_key: input.idempotencyKey,
+            is_demo: input.product === "demo",
             fee_rate: 0.001,
-          };
-      const { data, error } = await supabase.rpc(procedure, parameters);
+      });
       if (error) throw new Error(error.message);
-      return NextResponse.json({ data, marketPrice: price }, { status: 201 });
+      return NextResponse.json({ data, engine: "korvesta" }, { status: 201 });
     }
-    const execution = executionStatus();
-    if (!execution.testnet) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-      if (profile?.role !== "admin")
-        throw new Error(
-          "Mainnet execution is restricted to administrators until per-user exchange accounts are implemented.",
-        );
-    }
-    const prepared = await supabase.rpc("prepare_live_execution", {
-      request_key: input.idempotencyKey,
-      requested_pair: `${input.symbol}/USDT`,
-      request_payload: input,
-    });
-    if (prepared.error)
-      throw new Error(
-        `Could not prepare durable execution: ${prepared.error.message}`,
-      );
-    if (prepared.data?.state !== "prepared")
-      throw new Error(
-        `This execution key is already ${prepared.data?.state}; reconcile it instead of submitting again.`,
-      );
-    const claim = await supabase.rpc("claim_live_execution", {
-      request_key: input.idempotencyKey,
-    });
-    if (claim.error || !claim.data)
-      throw new Error(
-        "This order is already being submitted or requires reconciliation.",
-      );
-    const placed = await placeBinanceOrder(input);
-    await supabase.rpc("mark_live_execution", {
-      request_key: input.idempotencyKey,
-      next_state: "submitted",
-      provider_order_id: String(placed.orderId),
-      error_message: null,
-    });
-    const fills = Array.isArray(placed.fills)
-      ? (placed.fills as Array<Record<string, string>>)
-      : [];
-    const fillPrice =
-      Number(placed.executedQty) > 0
-        ? Number(placed.cummulativeQuoteQty) / Number(placed.executedQty)
-        : null;
-    const fee = fills.reduce(
-      (sum, item) => sum + Number(item.commission || 0),
-      0,
-    );
-    const { data, error } = await supabase.rpc("record_live_order_v2", {
-      asset: asset.id,
-      requested_side: input.side,
-      requested_type: input.type,
-      requested_quantity: input.quantity,
-      requested_limit: input.limitPrice ?? null,
-      requested_stop: input.stopPrice ?? null,
-      request_key: input.idempotencyKey,
-      provider_order_id: String(placed.orderId),
-      provider_status: String(placed.status),
-      provider_fill: fillPrice,
-      provider_fee: fee,
-    });
-    if (error)
-      throw new Error(
-        `Order placed but local recording failed: ${error.message}`,
-      );
-    await supabase.rpc("mark_live_execution", {
-      request_key: input.idempotencyKey,
-      next_state: "recorded",
-      provider_order_id: String(placed.orderId),
-      error_message: null,
-    });
-    return NextResponse.json({ data, provider: "binance" }, { status: 201 });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Order failed." },

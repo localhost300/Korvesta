@@ -62,12 +62,7 @@ export const initialCustomers: AdminCustomer[] = [
   { id: "KRV-10476", name: "Ibrahim Bello", email: "ibrahim.b@email.com", country: "Nigeria", joined: "8 Jun 2024", tier: "VIP", kyc: "Verified", status: "Suspended", portfolio: 205480.55, investment: 145000, trading: 48700.55, staking: 11780 },
 ];
 
-export const initialInvestmentPlans: AdminInvestmentPlan[] = [
-  { id: "PLAN-001", name: "Stable Income", apy: 8.5, duration: "90 days", minimum: 500, maximum: 25000, investors: 842, capital: 2845000, risk: "Low", status: "Active" },
-  { id: "PLAN-002", name: "Balanced Growth", apy: 14.2, duration: "180 days", minimum: 1000, maximum: 100000, investors: 516, capital: 5290000, risk: "Moderate", status: "Active" },
-  { id: "PLAN-003", name: "Digital Asset Growth", apy: 21.5, duration: "365 days", minimum: 2500, maximum: 250000, investors: 271, capital: 4760000, risk: "High", status: "Active" },
-  { id: "PLAN-004", name: "Treasury Reserve", apy: 6.25, duration: "Flexible", minimum: 100, maximum: 50000, investors: 1204, capital: 1985000, risk: "Low", status: "Paused" },
-];
+export const initialInvestmentPlans: AdminInvestmentPlan[] = [];
 
 export const initialKycApplications: KycApplication[] = [
   { id: "KYC-9051", customer: "Daniel Mensah", email: "daniel.mensah@email.com", country: "Ghana", level: "Level 2", document: "National ID", submitted: "12 minutes ago", risk: "Low", status: "Pending" },

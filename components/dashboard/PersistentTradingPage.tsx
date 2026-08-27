@@ -1,6 +1,8 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Card, DataTable, PageHeading, Segmented, Status } from "./DashboardUI";
+import { LightweightMarketChart } from "@/components/LightweightMarketChart";
+import { tradingAssets } from "@/lib/trading";
 
 type Order = {
   id: string;
@@ -39,19 +41,19 @@ type AccountData = {
 };
 
 export function PersistentTradingPage({
-  initialMode = "paper",
-  futures = false,
+  product = "spot",
 }: {
-  initialMode?: "paper" | "live";
-  futures?: boolean;
+  product?: "spot" | "futures" | "demo";
 }) {
-  const [mode, setMode] = useState<"paper" | "live">(initialMode);
+  const mode = product === "demo" ? "paper" : "live";
   const [side, setSide] = useState("buy");
   const [type, setType] = useState("market");
   const [symbol, setSymbol] = useState("BTC");
   const [quantity, setQuantity] = useState("0.001");
   const [limitPrice, setLimitPrice] = useState("");
   const [stopPrice, setStopPrice] = useState("");
+  const [leverage, setLeverage] = useState("2");
+  const [chartDays, setChartDays] = useState(7);
   const [account, setAccount] = useState<AccountData | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [book, setBook] = useState<{
@@ -61,16 +63,16 @@ export function PersistentTradingPage({
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
   const refresh = useCallback(async () => {
-    await fetch(`/api/trading/sync?mode=${mode}`, { method: "POST" }).catch(() => null);
+    await fetch(`/api/trading/sync?product=${product}`, { method: "POST" }).catch(() => null);
     const [a, o, b] = await Promise.all([
-      fetch(`/api/trading/account?mode=${mode}`),
-      fetch(`/api/trading/orders?mode=${mode}`),
+      fetch(`/api/trading/account?product=${product}`),
+      fetch(`/api/trading/orders?product=${product}`),
       fetch(`/api/market/order-book?symbol=${symbol}`),
     ]);
     if (a.ok) setAccount(await a.json());
     if (o.ok) setOrders((await o.json()).data ?? []);
     if (b.ok) setBook(await b.json());
-  }, [mode, symbol]);
+  }, [product, symbol]);
   useEffect(() => {
     const initial = window.setTimeout(() => void refresh(), 0);
     const timer = setInterval(() => void refresh(), 15000);
@@ -124,6 +126,8 @@ export function PersistentTradingPage({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         mode,
+        product,
+        leverage: product === "futures" ? Number(leverage) : undefined,
         symbol,
         side,
         type,
@@ -139,64 +143,45 @@ export function PersistentTradingPage({
     setPending(false);
     setMessage(
       response.ok
-        ? `${mode === "paper" ? "Paper" : "Binance"} order accepted.`
+        ? `${product === "demo" ? "Demo" : product === "futures" ? "Futures" : "Spot"} order accepted.`
         : (result.error ?? "Order failed."),
     );
     if (response.ok) void refresh();
   }
-  if (futures)
-    return (
-      <>
-        <PageHeading
-          title="Futures Trading"
-          subtitle="Futures execution is locked until a separate margin, liquidation, leverage and suitability engine is implemented."
-        />
-        <Card>
-          <p className="text-sm text-[#ffc400]">Unavailable by design</p>
-          <p className="mt-3 text-xs text-[#849099]">
-            The current engine supports spot paper trading and guarded Binance
-            spot execution only. It will not simulate leverage with misleading
-            balances.
-          </p>
-        </Card>
-      </>
-    );
   return (
     <>
       <PageHeading
-        title={
-          mode === "paper" ? "Persistent Paper Trading" : "Live Spot Trading"
-        }
-        subtitle={
-          mode === "paper"
-            ? "Orders, balances and positions are stored in Supabase."
-            : "Server-side Binance execution with testnet and mainnet safety gates."
-        }
+        title={product === "demo" ? "Demo Trading" : product === "futures" ? "Futures Trading" : "Spot Trading"}
+        subtitle={product === "demo" ? "Practice with a separate simulated balance and Korvesta order engine." : product === "futures" ? "Trade perpetual contracts through the Korvesta margin and risk engine." : "Buy and sell assets through the Korvesta spot order engine."}
       />
       <div className="mb-4 flex flex-wrap gap-3">
-        <Segmented
-          options={["paper", "live"]}
-          value={mode}
-          onChange={(v) => setMode(v as "paper" | "live")}
-        />
+        <Status tone={product === "demo" ? "yellow" : "green"}>{product === "demo" ? "Simulation" : "Korvesta engine"}</Status>
         <span className="rounded-lg border border-[#263038] px-3 py-2 text-xs">
           Cash: ${Number(account?.account.cash_balance ?? 0).toLocaleString()}
         </span>
         <span className="rounded-lg border border-[#263038] px-3 py-2 text-xs">
           Equity: ${(account?.equity ?? 0).toLocaleString()}
         </span>
-        {mode === "live" ? (
-          <Status tone={canLive ? "green" : "yellow"}>
-            {canLive
-              ? account?.execution.testnet
-                ? "Binance testnet"
-                : "BINANCE MAINNET"
-              : "Execution disabled"}
-          </Status>
-        ) : null}
       </div>
-      <div className="grid gap-4 xl:grid-cols-[1.5fr_.7fr]">
+      <div className="grid items-start gap-3 xl:grid-cols-[minmax(0,1fr)_330px]">
         <div className="space-y-4">
+          <Card>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base font-semibold">{symbol}/USDT</h2>
+                  <Status tone="green">Market</Status>
+                </div>
+                <p className="mt-1 text-[11px] text-[#849099]">Independent market candles · drag to pan · scroll to zoom</p>
+              </div>
+              <div className="flex rounded-lg border border-[#263038] bg-[#090e11] p-1">
+                {[[1, "1D"], [7, "1W"], [30, "1M"], [90, "3M"], [365, "1Y"]].map(([days, label]) => (
+                  <button key={days} type="button" onClick={() => setChartDays(Number(days))} className={`rounded-md px-3 py-1.5 text-[11px] font-semibold ${chartDays === days ? "bg-[#ffc400] text-black" : "text-[#849099] hover:text-white"}`}>{label}</button>
+                ))}
+              </div>
+            </div>
+            <LightweightMarketChart asset={tradingAssets[symbol as keyof typeof tradingAssets]} days={chartDays} height={560} />
+          </Card>
           <Card title={`${symbol}/USDT Order Book`}>
             <div className="grid grid-cols-2 gap-6 text-xs">
               <div>
@@ -246,18 +231,6 @@ export function PersistentTradingPage({
               ])}
             />
           </Card>
-          {mode === "live" ? (
-            <Card title="Binance balances">
-              <DataTable
-                headers={["Asset", "Free", "Locked"]}
-                rows={(account?.exchangeBalances ?? []).map((b) => [
-                  b.asset,
-                  b.free,
-                  b.locked,
-                ])}
-              />
-            </Card>
-          ) : null}
         </div>
         <Card title="Order ticket">
           <label className="text-xs">
@@ -321,8 +294,16 @@ export function PersistentTradingPage({
               </small>
             </label>
           ) : null}
+          {product === "futures" ? (
+            <label className="mt-4 block text-xs">
+              Leverage
+              <select className="dash-input mt-2" value={leverage} onChange={(event) => setLeverage(event.target.value)}>
+                {[1, 2, 3, 5, 10, 20].map((value) => <option key={value} value={value}>{value}×</option>)}
+              </select>
+            </label>
+          ) : null}
           <button
-            disabled={pending || (mode === "live" && !canLive)}
+            disabled={pending || (product !== "demo" && !canLive)}
             onClick={() => void submit()}
             className={`mt-5 min-h-12 w-full rounded-lg font-semibold disabled:opacity-50 ${side === "buy" ? "bg-[#00d084] text-black" : "bg-[#ef4444] text-white"}`}
           >
