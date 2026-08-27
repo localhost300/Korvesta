@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { coinGecko } from "@/lib/providers/coingecko";
-import { parseOrderInput, tradingAssets } from "@/lib/trading";
+import { tradingPrices } from "@/lib/providers/market-quotes";
+import { parseOrderInput } from "@/lib/trading";
 import { rejectCrossSiteMutation } from "@/lib/security/request";
 import { requireActiveCustomer } from "@/lib/security/account-status";
 
@@ -111,8 +111,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unsupported asset." }, { status: 400 });
   try {
     {
-      const market = await coinGecko.prices([tradingAssets[input.symbol]]);
-      const price = market[tradingAssets[input.symbol]]?.price;
+      const market = await tradingPrices([input.symbol]);
+      const price = market[input.symbol];
       if (!price) throw new Error("A current market price is unavailable.");
       if (input.product === "futures") {
         if (input.type !== "market") throw new Error("Futures limit and stop orders are not enabled yet.");

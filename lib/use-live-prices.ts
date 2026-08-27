@@ -19,6 +19,16 @@ const ids = [
   "solana",
   "binancecoin",
   "ripple",
+  "cardano",
+  "dogecoin",
+  "avalanche-2",
+  "polkadot",
+  "chainlink",
+  "litecoin",
+  "bitcoin-cash",
+  "uniswap",
+  "cosmos",
+  "tron",
 ];
 let snapshot: Snapshot = { prices: {}, loading: true, error: null };
 let request: Promise<void> | null = null;
@@ -74,6 +84,16 @@ export const coinGeckoIdBySymbol: Record<string, string> = {
   SOL: "solana",
   BNB: "binancecoin",
   XRP: "ripple",
+  ADA: "cardano",
+  DOGE: "dogecoin",
+  AVAX: "avalanche-2",
+  DOT: "polkadot",
+  LINK: "chainlink",
+  LTC: "litecoin",
+  BCH: "bitcoin-cash",
+  UNI: "uniswap",
+  ATOM: "cosmos",
+  TRX: "tron",
 };
 export function formatUsd(value: number) {
   return new Intl.NumberFormat("en-US", {

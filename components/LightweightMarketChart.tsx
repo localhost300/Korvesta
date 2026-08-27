@@ -6,6 +6,7 @@ import {
   ColorType,
   CrosshairMode,
   LineSeries,
+  HistogramSeries,
   createChart,
   type UTCTimestamp,
 } from "lightweight-charts";
@@ -81,6 +82,13 @@ export function LightweightMarketChart({
       priceLineVisible: false,
       lastValueVisible: false,
     });
+    const volume = chart.addSeries(HistogramSeries, {
+      priceFormat: { type: "volume" },
+      priceScaleId: "volume",
+      lastValueVisible: false,
+      priceLineVisible: false,
+    });
+    chart.priceScale("volume").applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
     const rsi = chart.addSeries(LineSeries, {
       color: "#ffc400",
       lineWidth: 2,
@@ -102,9 +110,11 @@ export function LightweightMarketChart({
               high: number;
               low: number;
               close: number;
+              volume?: number;
             }) => ({ ...candle, time: candle.time as UTCTimestamp }),
           );
         series.setData(candles);
+        volume.setData(candles.map((candle: {time: UTCTimestamp; open: number; close: number; volume?: number}) => ({time:candle.time,value:candle.volume??0,color:candle.close>=candle.open?"rgba(24,199,123,.28)":"rgba(240,82,96,.28)"})));
         movingAverage.setData(candles.flatMap((candle: {time: UTCTimestamp; close: number}, index: number) => {
           if (index < 9) return [];
           const average = candles.slice(index - 9, index + 1).reduce((sum: number, item: {close: number}) => sum + item.close, 0) / 10;

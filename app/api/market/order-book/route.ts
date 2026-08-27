@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-const allowed=new Set(["BTC","ETH","SOL","BNB","XRP"]);
+import { tradingSymbols } from "@/lib/trading";
+const allowed=new Set<string>(tradingSymbols);
 export async function GET(request:Request){
   const symbol=(new URL(request.url).searchParams.get("symbol")??"BTC").toUpperCase();
   if(!allowed.has(symbol))return NextResponse.json({error:"Unsupported market."},{status:400});

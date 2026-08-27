@@ -1,11 +1,41 @@
-export const tradingAssets = {
+export const cryptoTradingAssets = {
   BTC: "bitcoin",
   ETH: "ethereum",
   SOL: "solana",
   BNB: "binancecoin",
   XRP: "ripple",
+  ADA: "cardano",
+  DOGE: "dogecoin",
+  AVAX: "avalanche-2",
+  DOT: "polkadot",
+  LINK: "chainlink",
+  LTC: "litecoin",
+  BCH: "bitcoin-cash",
+  UNI: "uniswap",
+  ATOM: "cosmos",
+  TRX: "tron",
 } as const;
+export const traditionalTradingSymbols = [
+  "BND", "AGG", "TLT", "SHY", "LQD", "TIP", "IEF", "VGSH",
+  "SPY", "QQQ", "VTI", "VEA", "VWO", "GLD", "VNQ",
+  "AAPL", "MSFT", "NVDA", "TSLA", "AMZN", "GOOGL", "META",
+  "JPM", "JNJ", "XOM", "KO", "O", "PLD",
+] as const;
+export const tradingMarketGroups = {
+  Crypto: Object.keys(cryptoTradingAssets),
+  "Bond ETFs": ["BND", "AGG", "TLT", "SHY", "LQD", "TIP", "IEF", "VGSH"],
+  ETFs: ["SPY", "QQQ", "VTI", "VEA", "VWO", "GLD", "VNQ"],
+  Stocks: ["AAPL", "MSFT", "NVDA", "TSLA", "AMZN", "GOOGL", "META", "JPM", "JNJ", "XOM", "KO", "O", "PLD"],
+} as const;
+export const tradingAssets = {
+  ...cryptoTradingAssets,
+  ...Object.fromEntries(traditionalTradingSymbols.map((symbol) => [symbol, symbol])),
+} as typeof cryptoTradingAssets & Record<(typeof traditionalTradingSymbols)[number], string>;
+export const tradingSymbols = Object.keys(tradingAssets) as Array<keyof typeof tradingAssets>;
 export type TradingSymbol = keyof typeof tradingAssets;
+export function isCryptoTradingSymbol(symbol: string): symbol is keyof typeof cryptoTradingAssets {
+  return symbol in cryptoTradingAssets;
+}
 export type TradingProduct = "spot" | "futures" | "demo";
 export type TradingMode = "paper" | "live";
 export type TradingOrderInput = {
@@ -121,6 +151,7 @@ export function parseOrderInput(value: unknown): TradingOrderInput {
     (type.startsWith("stop_") && (!stopPrice || stopPrice <= 0)) ||
     idempotencyKey.length < 8 ||
     idempotencyKey.length > 100 ||
+    (product === "futures" && !isCryptoTradingSymbol(symbol)) ||
     (product === "futures" &&
       (!Number.isInteger(leverage) || leverage! < 1 || leverage! > 20))
   )

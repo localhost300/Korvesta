@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Card, DataTable, PageHeading, Status } from "./DashboardUI";
 import { LightweightMarketChart } from "@/components/LightweightMarketChart";
-import { tradingAssets } from "@/lib/trading";
+import { tradingMarketGroups } from "@/lib/trading";
 
 type Order = {
   id: string;
@@ -30,6 +30,12 @@ type AccountData = {
     price: number;
     value: number;
     unrealisedPnl: number;
+    assetId?: string;
+    margin?: number;
+    leverage?: number;
+    liquidationPrice?: number;
+    stopLoss?: number | null;
+    takeProfit?: number | null;
   }>;
   execution: {
     enabled: boolean;
@@ -54,6 +60,8 @@ export function PersistentTradingPage({
   const [stopPrice, setStopPrice] = useState("");
   const [leverage, setLeverage] = useState("2");
   const [chartDays, setChartDays] = useState(7);
+  const [transferAmount, setTransferAmount] = useState("");
+  const [transferDirection, setTransferDirection] = useState("wallet_to_spot");
   const [account, setAccount] = useState<AccountData | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [book, setBook] = useState<{
@@ -148,6 +156,15 @@ export function PersistentTradingPage({
     );
     if (response.ok) void refresh();
   }
+  async function transfer() {
+    setPending(true); const response=await fetch("/api/trading/transfers",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({direction:transferDirection,amount:Number(transferAmount),idempotencyKey:crypto.randomUUID()})});const result=await response.json().catch(()=>({}));setPending(false);setMessage(response.ok?"Transfer completed.":result.error??"Transfer failed.");if(response.ok){setTransferAmount("");void refresh();}
+  }
+  async function closePosition(position: AccountData["positions"][number]) {
+    setPending(true);const response=await fetch("/api/trading/orders",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({product:"futures",symbol:position.symbol,side:position.quantity>0?"sell":"buy",type:"market",quantity:Math.abs(position.quantity),leverage:position.leverage??1,idempotencyKey:crypto.randomUUID()})});const result=await response.json().catch(()=>({}));setPending(false);setMessage(response.ok?`${position.symbol} position closed.`:result.error??"Close failed.");if(response.ok)void refresh();
+  }
+  async function setRisk(position: AccountData["positions"][number]) {
+    if(!position.assetId)return;const stop=window.prompt("Stop-loss price",position.stopLoss?.toString()??"");if(stop===null)return;const take=window.prompt("Take-profit price",position.takeProfit?.toString()??"");if(take===null)return;const response=await fetch("/api/trading/futures/risk",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({assetId:position.assetId,stopLoss:stop?Number(stop):null,takeProfit:take?Number(take):null})});const result=await response.json().catch(()=>({}));setMessage(response.ok?"Risk controls saved.":result.error??"Could not save risk controls.");if(response.ok)void refresh();
+  }
   return (
     <>
       <section className="mb-2 flex flex-wrap items-center gap-3 rounded-xl border border-[#202a31] bg-[#0a1014] px-4 py-3">
@@ -160,6 +177,11 @@ export function PersistentTradingPage({
           Equity <b className="ml-1">${(account?.equity ?? 0).toLocaleString()}</b>
         </span>
       </section>
+      {product !== "demo" ? <section className="mb-2 flex flex-wrap items-end gap-2 rounded-xl border border-[#202a31] bg-[#0a1014] p-3">
+        <label className="text-[11px] text-[#849099]">Transfer<select className="dash-input mt-1 min-w-44" value={transferDirection} onChange={e=>setTransferDirection(e.target.value)}>{product==="spot"?<><option value="wallet_to_spot">Wallet → Spot</option><option value="spot_to_wallet">Spot → Wallet</option></>:<><option value="spot_to_futures">Spot → Futures</option><option value="futures_to_spot">Futures → Spot</option></>}</select></label>
+        <label className="text-[11px] text-[#849099]">Amount<input className="dash-input mt-1 max-w-48" inputMode="decimal" value={transferAmount} onChange={e=>setTransferAmount(e.target.value)} placeholder="USDT"/></label>
+        <button type="button" disabled={pending||!Number(transferAmount)} onClick={()=>void transfer()} className="gold-button min-h-10 disabled:opacity-50">Transfer funds</button>
+      </section>:null}
       <div className="grid items-start gap-2 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-4">
           <div className="rounded-xl border border-[#202a31] bg-[#0a1014] p-3">
@@ -177,7 +199,7 @@ export function PersistentTradingPage({
                 ))}
               </div>
             </div>
-            <LightweightMarketChart asset={tradingAssets[symbol as keyof typeof tradingAssets]} days={chartDays} height={620} />
+            <LightweightMarketChart asset={symbol} days={chartDays} height={620} />
           </div>
           <Card title={`${symbol}/USDT Order Book`}>
             <div className="grid grid-cols-2 gap-6 text-xs">
@@ -208,15 +230,16 @@ export function PersistentTradingPage({
                 "Quantity",
                 "Average",
                 "Market",
-                "Value",
+                product === "futures" ? "Margin / Leverage" : "Value",
                 "Unrealised P&L",
+                ...(product === "futures" ? ["Liquidation", "Risk", "Action"] : []),
               ]}
               rows={(account?.positions ?? []).map((p) => [
                 p.symbol,
                 p.quantity,
                 p.averageCost.toFixed(2),
                 p.price.toFixed(2),
-                p.value.toFixed(2),
+                product === "futures" ? `${(p.margin??0).toFixed(2)} / ${p.leverage??1}×` : p.value.toFixed(2),
                 <span
                   key="pnl"
                   className={
@@ -225,6 +248,11 @@ export function PersistentTradingPage({
                 >
                   {p.unrealisedPnl.toFixed(2)}
                 </span>,
+                ...(product === "futures" ? [
+                  p.liquidationPrice?.toFixed(2)??"—",
+                  <button key="risk" onClick={()=>void setRisk(p)} className="text-[#ffc400]">{p.stopLoss||p.takeProfit?"Edit SL/TP":"Add SL/TP"}</button>,
+                  <button key="close" disabled={pending} onClick={()=>void closePosition(p)} className="rounded bg-[#ef4444] px-2 py-1 text-white disabled:opacity-50">Close</button>,
+                ] : []),
               ])}
             />
           </Card>
@@ -237,8 +265,10 @@ export function PersistentTradingPage({
               value={symbol}
               onChange={(e) => setSymbol(e.target.value)}
             >
-              {["BTC", "ETH", "SOL", "BNB", "XRP"].map((s) => (
-                <option key={s}>{s}</option>
+              {Object.entries(tradingMarketGroups).filter(([group]) => product !== "futures" || group === "Crypto").map(([group, symbols]) => (
+                <optgroup key={group} label={group}>
+                  {symbols.map((marketSymbol) => <option key={marketSymbol} value={marketSymbol}>{marketSymbol}/USDT</option>)}
+                </optgroup>
               ))}
             </select>
           </label>

@@ -19,25 +19,77 @@ const assets = [
   { symbol: "SOL", name: "Solana", colour: "#7c3aed" },
   { symbol: "BNB", name: "BNB", colour: "#f3ba2f" },
   { symbol: "XRP", name: "XRP", colour: "#64748b" },
+  { symbol: "ADA", name: "Cardano", colour: "#2a71d0" },
+  { symbol: "DOGE", name: "Dogecoin", colour: "#c2a633" },
+  { symbol: "AVAX", name: "Avalanche", colour: "#e84142" },
+  { symbol: "DOT", name: "Polkadot", colour: "#e6007a" },
+  { symbol: "LINK", name: "Chainlink", colour: "#2a5ada" },
+  { symbol: "LTC", name: "Litecoin", colour: "#345d9d" },
+  { symbol: "BCH", name: "Bitcoin Cash", colour: "#8dc351" },
+  { symbol: "UNI", name: "Uniswap", colour: "#ff007a" },
+  { symbol: "ATOM", name: "Cosmos", colour: "#6f7390" },
+  { symbol: "TRX", name: "TRON", colour: "#ef0027" },
 ];
 const traditionalMarkets = {
   Bonds: [
     ["US 3-Month Treasury Bill", "UST-3M", "Government", "3 months"],
+    ["US 6-Month Treasury Bill", "UST-6M", "Government", "6 months"],
+    ["US 1-Year Treasury Bill", "UST-1Y", "Government", "1 year"],
     ["US 2-Year Treasury Note", "UST-2Y", "Government", "2 years"],
+    ["US 5-Year Treasury Note", "UST-5Y", "Government", "5 years"],
     ["US 10-Year Treasury Note", "UST-10Y", "Government", "10 years"],
     ["US 30-Year Treasury Bond", "UST-30Y", "Government", "30 years"],
+    ["Treasury Inflation-Protected Security", "TIPS", "Government", "Inflation-linked"],
+    ["US Series I Savings Bond", "I-BOND", "Savings bond", "Inflation-linked"],
+    ["Investment-Grade Corporate Bonds", "US-IG", "Corporate", "Broad market"],
+    ["High-Yield Corporate Bonds", "US-HY", "Corporate", "Broad market"],
+    ["Municipal Bonds", "US-MUNI", "Municipal", "Tax-exempt income"],
   ],
   ETFs: [
     ["Vanguard Total Bond Market ETF", "BND", "Bond ETF", "US aggregate bonds"],
     ["iShares Core US Aggregate Bond ETF", "AGG", "Bond ETF", "US aggregate bonds"],
+    ["iShares 20+ Year Treasury Bond ETF", "TLT", "Bond ETF", "Long Treasuries"],
+    ["iShares 1-3 Year Treasury Bond ETF", "SHY", "Bond ETF", "Short Treasuries"],
+    ["iShares iBoxx Investment Grade Corporate Bond ETF", "LQD", "Bond ETF", "Corporate bonds"],
+    ["iShares TIPS Bond ETF", "TIP", "Bond ETF", "Inflation-protected"],
     ["SPDR S&P 500 ETF Trust", "SPY", "Equity ETF", "Large-cap US stocks"],
     ["Invesco QQQ Trust", "QQQ", "Equity ETF", "Nasdaq-100"],
+    ["Vanguard Total Stock Market ETF", "VTI", "Equity ETF", "Total US market"],
+    ["Vanguard FTSE Developed Markets ETF", "VEA", "Equity ETF", "Developed markets"],
+    ["Vanguard FTSE Emerging Markets ETF", "VWO", "Equity ETF", "Emerging markets"],
+    ["SPDR Gold Shares", "GLD", "Commodity ETF", "Gold"],
   ],
   Stocks: [
     ["Apple", "AAPL", "Technology", "NASDAQ"],
     ["Microsoft", "MSFT", "Technology", "NASDAQ"],
     ["NVIDIA", "NVDA", "Technology", "NASDAQ"],
     ["Tesla", "TSLA", "Automotive", "NASDAQ"],
+    ["Amazon", "AMZN", "Consumer/Cloud", "NASDAQ"],
+    ["Alphabet", "GOOGL", "Technology", "NASDAQ"],
+    ["Meta Platforms", "META", "Technology", "NASDAQ"],
+    ["JPMorgan Chase", "JPM", "Financials", "NYSE"],
+    ["Berkshire Hathaway", "BRK.B", "Financials", "NYSE"],
+    ["Johnson & Johnson", "JNJ", "Healthcare", "NYSE"],
+    ["Exxon Mobil", "XOM", "Energy", "NYSE"],
+    ["Coca-Cola", "KO", "Consumer staples", "NYSE"],
+  ],
+  "Retirement Accounts": [
+    ["Traditional 401(k)", "401K", "Employer account", "Pre-tax contributions"],
+    ["Roth 401(k)", "R401K", "Employer account", "After-tax contributions"],
+    ["Traditional IRA", "IRA", "Individual account", "Tax-deferred"],
+    ["Roth IRA", "ROTH-IRA", "Individual account", "Qualified tax-free withdrawals"],
+    ["SEP IRA", "SEP-IRA", "Business retirement", "Employer contributions"],
+    ["SIMPLE IRA", "SIMPLE-IRA", "Small-business retirement", "Employer sponsored"],
+    ["403(b)", "403B", "Employer account", "Education/nonprofit employees"],
+    ["457(b)", "457B", "Employer account", "Government employees"],
+  ],
+  "Funds & REITs": [
+    ["Vanguard 500 Index Fund Admiral", "VFIAX", "Mutual fund", "S&P 500"],
+    ["Fidelity 500 Index Fund", "FXAIX", "Mutual fund", "S&P 500"],
+    ["Schwab S&P 500 Index Fund", "SWPPX", "Mutual fund", "S&P 500"],
+    ["Vanguard Real Estate ETF", "VNQ", "REIT ETF", "US real estate"],
+    ["Realty Income", "O", "REIT", "Retail properties"],
+    ["Prologis", "PLD", "REIT", "Logistics properties"],
   ],
 } as const;
 export function RealMarketsPage() {
@@ -80,7 +132,7 @@ export function RealMarketsPage() {
     <>
       <PageHeading
         title="Markets"
-        subtitle="Explore bonds, ETFs, stocks, and digital assets from one market directory."
+        subtitle="Explore bonds, ETFs, stocks, retirement accounts, and digital assets from one directory."
       />
       {error && (
         <p className="mb-4 rounded-lg border border-red-500/30 p-3 text-sm text-red-400">
@@ -103,9 +155,9 @@ export function RealMarketsPage() {
           value={cap ? `${((btc / cap) * 100).toFixed(2)}%` : "—"}
           change="Share of tracked market cap"
         />
-        <MetricCard label="Market coverage" value="4 classes" change="Bonds, ETFs, stocks, and crypto" />
+        <MetricCard label="Market coverage" value="6 classes" change="Bonds, funds, stocks, retirement, REITs, and crypto" />
       </div>
-      <div className="mt-4 grid gap-4 xl:grid-cols-3">
+      <div className="mt-4 grid gap-4 xl:grid-cols-2">
         {Object.entries(traditionalMarkets).map(([category, instruments]) => (
           <Card key={category} title={category}>
             <DataTable
@@ -115,6 +167,9 @@ export function RealMarketsPage() {
           </Card>
         ))}
       </div>
+      <Card className="mt-4">
+        <p className="text-xs leading-6 text-[#819099]">401(k), IRA, 403(b), and 457(b) products are account structures, not market pairs. They can hold eligible funds, ETFs, stocks, and bonds after an administrator configures the available retirement offering.</p>
+      </Card>
       <Card className="mt-4" title="Digital assets">
         {rows.length ? (
           <DataTable
