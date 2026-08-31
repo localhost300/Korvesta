@@ -21,7 +21,6 @@ import {
   IconMenu2,
   IconMessageCircle,
   IconMoon,
-  IconSearch,
   IconSettings,
   IconShield,
   IconSun,
@@ -32,6 +31,8 @@ import {
 } from "@tabler/icons-react";
 import { Logo } from "@/components/Logo";
 import { AdminModal, AdminTabs } from "./AdminUI";
+import { GlobalSearch } from "@/components/GlobalSearch";
+import { createClient } from "@/lib/supabase/client";
 
 const THEME_STORAGE_KEY = "korvesta-theme:v1";
 
@@ -223,7 +224,13 @@ function AdminSidebar({
   );
 }
 
-function AlertsModal({ close }: { close: () => void }) {
+function AlertsModal({
+  close,
+  alerts,
+}: {
+  close: () => void;
+  alerts: typeof adminAlerts;
+}) {
   const [filter, setFilter] = useState("All");
   const categories = [
     "All",
@@ -235,8 +242,8 @@ function AlertsModal({ close }: { close: () => void }) {
   ];
   const visible =
     filter === "All"
-      ? adminAlerts
-      : adminAlerts.filter((item) => item.category === filter);
+      ? alerts
+      : alerts.filter((item) => item.category === filter);
   return (
     <AdminModal
       title="Administrative Alerts"
@@ -324,6 +331,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(false);
+  const [alertItems, setAlertItems] = useState(adminAlerts);
   const [profileOpen, setProfileOpen] = useState(false);
   const [light, setLight] = useState(false);
 
@@ -336,6 +344,50 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     document.documentElement.style.colorScheme = saved ? "light" : "dark";
     const frame = window.requestAnimationFrame(() => setLight(saved));
     return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
+    let client: ReturnType<typeof createClient>;
+    try {
+      client = createClient();
+    } catch {
+      return;
+    }
+    const labels: Record<string, readonly [string, string]> = {
+      profiles: ["Customer account updated", "Compliance"],
+      transactions: ["New transaction activity", "Payments"],
+      kyc_submissions: ["KYC submission updated", "Compliance"],
+      trading_orders: ["Trading order updated", "System"],
+    };
+    let channel = client.channel("admin-live-alerts");
+    for (const table of Object.keys(labels)) {
+      channel = channel.on(
+        "postgres_changes",
+        { event: "*", schema: "public", table },
+        (payload) => {
+          const record = payload.new as unknown as Record<string, unknown>;
+          const [title, category] = labels[table];
+          setAlertItems((current) =>
+            [
+              {
+                title,
+                copy: String(
+                  record.id ?? record.reference ?? "A platform record changed",
+                ),
+                time: "just now",
+                colour: category === "Payments" ? "#ffc400" : "#00d084",
+                category,
+              },
+              ...current,
+            ].slice(0, 30),
+          );
+        },
+      );
+    }
+    channel.subscribe();
+    return () => {
+      void client.removeChannel(channel);
+    };
   }, []);
 
   const toggleTheme = () => {
@@ -382,16 +434,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           >
             <IconMenu2 size={19} />
           </button>
-          <div className="relative hidden w-full max-w-[420px] md:block">
-            <IconSearch
-              size={17}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--dash-muted)]"
-            />
-            <input
-              className="dash-input h-10 pl-10"
-              placeholder="Search customers, transactions, KYC or tickets..."
-            />
-          </div>
+          <GlobalSearch
+            area="admin"
+            className="hidden w-full max-w-[420px] md:block"
+          />
           <div className="ml-auto flex items-center gap-2 sm:gap-3">
             <span className="hidden items-center gap-2 rounded-full border border-[#00d08435] bg-[#00d0840b] px-3 py-1.5 text-[10px] text-[#00d084] lg:flex">
               <i className="size-1.5 rounded-full bg-[#00d084]" />
@@ -418,7 +464,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             >
               <IconBell size={19} />
               <span className="absolute -right-0.5 -top-0.5 grid size-4 place-items-center rounded-full bg-[#ef4444] text-[9px] font-bold text-white">
-                4
+                {alertItems.length}
               </span>
             </button>
             <div className="relative">
@@ -477,7 +523,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <span>More</span>
         </button>
       </nav>
-      {alertsOpen ? <AlertsModal close={() => setAlertsOpen(false)} /> : null}
+      {alertsOpen ? (
+        <AlertsModal close={() => setAlertsOpen(false)} alerts={alertItems} />
+      ) : null}
     </div>
   );
 }

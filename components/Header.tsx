@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { Logo } from "./Logo";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { navItems } from "@/lib/data";
+import { GlobalSearch } from "./GlobalSearch";
 
 const THEME_STORAGE_KEY = "korvesta-theme:v1";
 
@@ -21,7 +22,10 @@ function loadSavedTheme() {
 
 function saveTheme(lightMode: boolean) {
   try {
-    window.localStorage.setItem(THEME_STORAGE_KEY, lightMode ? "light" : "dark");
+    window.localStorage.setItem(
+      THEME_STORAGE_KEY,
+      lightMode ? "light" : "dark",
+    );
   } catch {
     // The selected theme still applies when browser storage is unavailable.
   }
@@ -66,10 +70,14 @@ export function Header() {
         <div className="container-shell flex h-16 items-center justify-between gap-4 lg:h-[74px] lg:gap-7">
           <Logo />
 
-          <nav className="hidden items-center gap-7 lg:flex" aria-label="Main navigation">
+          <nav
+            className="hidden items-center gap-7 lg:flex"
+            aria-label="Main navigation"
+          >
             {navItems.map((item) => {
               const itemPath = item.href.split("#")[0];
-              const active = pathname === itemPath || pathname.startsWith(`${itemPath}/`);
+              const active =
+                pathname === itemPath || pathname.startsWith(`${itemPath}/`);
 
               return (
                 <Link
@@ -91,6 +99,7 @@ export function Header() {
           </nav>
 
           <div className="flex items-center gap-2.5">
+            <GlobalSearch area="public" className="hidden w-[230px] xl:block" />
             <button
               type="button"
               onClick={toggleTheme}

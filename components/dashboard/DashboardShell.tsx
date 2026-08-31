@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
+  IconActivity,
   IconBell,
   IconBriefcase,
   IconChartCandle,
@@ -16,7 +17,6 @@ import {
   IconMoon,
   IconLogout,
   IconRobot,
-  IconSearch,
   IconSettings,
   IconShield,
   IconSun,
@@ -30,6 +30,8 @@ import { Logo } from "@/components/Logo";
 import { notifications } from "@/lib/dashboard-data";
 import { Segmented } from "./DashboardUI";
 import type { Icon } from "@tabler/icons-react";
+import { GlobalSearch } from "@/components/GlobalSearch";
+import { createClient } from "@/lib/supabase/client";
 
 const THEME_STORAGE_KEY = "korvesta-theme:v1";
 
@@ -42,7 +44,11 @@ type NavItem = {
 
 const navigation: NavItem[] = [
   { label: "Overview", href: "/dashboard", icon: IconDashboard },
-  { label: "Investment Portfolio", href: "/dashboard/portfolio", icon: IconBriefcase },
+  {
+    label: "Investment Portfolio",
+    href: "/dashboard/portfolio",
+    icon: IconBriefcase,
+  },
   { label: "Markets", href: "/dashboard/markets", icon: IconChartCandle },
   {
     label: "Trade",
@@ -101,16 +107,34 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
             {item.children ? (
               <button
                 type="button"
-                onClick={() => setExpanded((current) => ({ ...current, [item.href]: !(current[item.href] ?? active) }))}
-                className={clsx("dash-nav-item w-full", active && "dash-nav-active")}
+                onClick={() =>
+                  setExpanded((current) => ({
+                    ...current,
+                    [item.href]: !(current[item.href] ?? active),
+                  }))
+                }
+                className={clsx(
+                  "dash-nav-item w-full",
+                  active && "dash-nav-active",
+                )}
                 aria-expanded={expanded[item.href] ?? active}
               >
                 <item.icon size={18} stroke={1.8} />
                 <span>{item.label}</span>
-                <IconChevronDown size={14} className={clsx("ml-auto transition-transform", (expanded[item.href] ?? active) && "rotate-180")} />
+                <IconChevronDown
+                  size={14}
+                  className={clsx(
+                    "ml-auto transition-transform",
+                    (expanded[item.href] ?? active) && "rotate-180",
+                  )}
+                />
               </button>
             ) : (
-              <Link href={item.href} onClick={onNavigate} className={clsx("dash-nav-item", active && "dash-nav-active")}>
+              <Link
+                href={item.href}
+                onClick={onNavigate}
+                className={clsx("dash-nav-item", active && "dash-nav-active")}
+              >
                 <item.icon size={18} stroke={1.8} />
                 <span>{item.label}</span>
               </Link>
@@ -141,7 +165,13 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-function NotificationsModal({ close }: { close: () => void }) {
+function NotificationsModal({
+  close,
+  items,
+}: {
+  close: () => void;
+  items: typeof notifications;
+}) {
   const [filter, setFilter] = useState("All");
   const options = [
     "All",
@@ -152,9 +182,7 @@ function NotificationsModal({ close }: { close: () => void }) {
     "Security",
   ];
   const shown =
-    filter === "All"
-      ? notifications
-      : notifications.filter((item) => item.category === filter);
+    filter === "All" ? items : items.filter((item) => item.category === filter);
   return (
     <div
       className="fixed inset-0 z-[100] grid place-items-center bg-black/75 p-4 backdrop-blur-sm"
@@ -248,6 +276,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notificationItems, setNotificationItems] = useState(notifications);
   const [light, setLight] = useState(false);
   const [account, setAccount] = useState<{
     full_name: string;
@@ -263,6 +292,55 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     document.documentElement.style.colorScheme = saved ? "light" : "dark";
     const frame = window.requestAnimationFrame(() => setLight(saved));
     return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
+    let client: ReturnType<typeof createClient>;
+    try {
+      client = createClient();
+    } catch {
+      return;
+    }
+    const addEvent = (table: string, record: Record<string, unknown>) => {
+      const isTrade = table === "trading_orders";
+      const symbol = String(record.symbol ?? record.asset_symbol ?? "account");
+      setNotificationItems((current) =>
+        [
+          {
+            title: isTrade
+              ? "Trade update"
+              : table === "transactions"
+                ? "Transaction update"
+                : "Investment update",
+            copy: isTrade
+              ? `${symbol} order status: ${String(record.status ?? "updated")}`
+              : `Your ${symbol} activity was updated.`,
+            time: "just now",
+            category: isTrade ? "Trade Alerts" : "Staking",
+            icon: isTrade ? IconChartCandle : IconActivity,
+            colour: "#00d084",
+          },
+          ...current,
+        ].slice(0, 30),
+      );
+    };
+    let channel = client.channel("dashboard-live-notifications");
+    for (const table of [
+      "trading_orders",
+      "transactions",
+      "investment_positions",
+    ]) {
+      channel = channel.on(
+        "postgres_changes",
+        { event: "*", schema: "public", table },
+        (payload) =>
+          addEvent(table, payload.new as unknown as Record<string, unknown>),
+      );
+    }
+    channel.subscribe();
+    return () => {
+      void client.removeChannel(channel);
+    };
   }, []);
   useEffect(() => {
     const controller = new AbortController();
@@ -313,16 +391,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           >
             <IconMenu2 size={19} />
           </button>
-          <div className="relative hidden w-full max-w-[360px] md:block">
-            <IconSearch
-              size={17}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-[#71808a]"
-            />
-            <input
-              className="h-10 w-full rounded-lg border border-[#1f292f] bg-[#0b1014] pl-10 pr-4 text-xs outline-none focus:border-[#ffc400]"
-              placeholder="Search assets, markets, or features..."
-            />
-          </div>
+          <GlobalSearch
+            area="dashboard"
+            className="hidden w-full max-w-[360px] md:block"
+          />
           <div className="ml-auto flex items-center gap-2 sm:gap-3">
             <button
               onClick={toggleTheme}
@@ -343,7 +415,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             >
               <IconBell size={19} />
               <span className="absolute -right-0.5 -top-0.5 grid size-4 place-items-center rounded-full bg-[#ffc400] text-[9px] font-bold text-black">
-                5
+                {notificationItems.length}
               </span>
             </button>
             <form action="/api/auth/logout" method="post">
@@ -406,7 +478,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </button>
       </nav>
       {notificationsOpen && (
-        <NotificationsModal close={() => setNotificationsOpen(false)} />
+        <NotificationsModal
+          close={() => setNotificationsOpen(false)}
+          items={notificationItems}
+        />
       )}
     </div>
   );
