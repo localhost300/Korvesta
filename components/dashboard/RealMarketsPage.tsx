@@ -1,17 +1,12 @@
 "use client";
-import {
-  Card,
-  Coin,
-  DataTable,
-  MetricCard,
-  PageHeading,
-} from "./DashboardUI";
+import { Card, Coin, DataTable, MetricCard, PageHeading } from "./DashboardUI";
 import {
   coinGeckoIdBySymbol,
   formatCompactUsd,
   formatUsd,
   useLivePrices,
 } from "@/lib/use-live-prices";
+import { MarketLogo } from "@/components/MarketLogo";
 const assets = [
   { symbol: "BTC", name: "Bitcoin", colour: "#f7931a" },
   { symbol: "ETH", name: "Ethereum", colour: "#627eea" },
@@ -39,7 +34,12 @@ const traditionalMarkets = {
     ["US 5-Year Treasury Note", "UST-5Y", "Government", "5 years"],
     ["US 10-Year Treasury Note", "UST-10Y", "Government", "10 years"],
     ["US 30-Year Treasury Bond", "UST-30Y", "Government", "30 years"],
-    ["Treasury Inflation-Protected Security", "TIPS", "Government", "Inflation-linked"],
+    [
+      "Treasury Inflation-Protected Security",
+      "TIPS",
+      "Government",
+      "Inflation-linked",
+    ],
     ["US Series I Savings Bond", "I-BOND", "Savings bond", "Inflation-linked"],
     ["Investment-Grade Corporate Bonds", "US-IG", "Corporate", "Broad market"],
     ["High-Yield Corporate Bonds", "US-HY", "Corporate", "Broad market"],
@@ -47,16 +47,46 @@ const traditionalMarkets = {
   ],
   ETFs: [
     ["Vanguard Total Bond Market ETF", "BND", "Bond ETF", "US aggregate bonds"],
-    ["iShares Core US Aggregate Bond ETF", "AGG", "Bond ETF", "US aggregate bonds"],
-    ["iShares 20+ Year Treasury Bond ETF", "TLT", "Bond ETF", "Long Treasuries"],
-    ["iShares 1-3 Year Treasury Bond ETF", "SHY", "Bond ETF", "Short Treasuries"],
-    ["iShares iBoxx Investment Grade Corporate Bond ETF", "LQD", "Bond ETF", "Corporate bonds"],
+    [
+      "iShares Core US Aggregate Bond ETF",
+      "AGG",
+      "Bond ETF",
+      "US aggregate bonds",
+    ],
+    [
+      "iShares 20+ Year Treasury Bond ETF",
+      "TLT",
+      "Bond ETF",
+      "Long Treasuries",
+    ],
+    [
+      "iShares 1-3 Year Treasury Bond ETF",
+      "SHY",
+      "Bond ETF",
+      "Short Treasuries",
+    ],
+    [
+      "iShares iBoxx Investment Grade Corporate Bond ETF",
+      "LQD",
+      "Bond ETF",
+      "Corporate bonds",
+    ],
     ["iShares TIPS Bond ETF", "TIP", "Bond ETF", "Inflation-protected"],
     ["SPDR S&P 500 ETF Trust", "SPY", "Equity ETF", "Large-cap US stocks"],
     ["Invesco QQQ Trust", "QQQ", "Equity ETF", "Nasdaq-100"],
     ["Vanguard Total Stock Market ETF", "VTI", "Equity ETF", "Total US market"],
-    ["Vanguard FTSE Developed Markets ETF", "VEA", "Equity ETF", "Developed markets"],
-    ["Vanguard FTSE Emerging Markets ETF", "VWO", "Equity ETF", "Emerging markets"],
+    [
+      "Vanguard FTSE Developed Markets ETF",
+      "VEA",
+      "Equity ETF",
+      "Developed markets",
+    ],
+    [
+      "Vanguard FTSE Emerging Markets ETF",
+      "VWO",
+      "Equity ETF",
+      "Emerging markets",
+    ],
     ["SPDR Gold Shares", "GLD", "Commodity ETF", "Gold"],
   ],
   Stocks: [
@@ -77,9 +107,19 @@ const traditionalMarkets = {
     ["Traditional 401(k)", "401K", "Employer account", "Pre-tax contributions"],
     ["Roth 401(k)", "R401K", "Employer account", "After-tax contributions"],
     ["Traditional IRA", "IRA", "Individual account", "Tax-deferred"],
-    ["Roth IRA", "ROTH-IRA", "Individual account", "Qualified tax-free withdrawals"],
+    [
+      "Roth IRA",
+      "ROTH-IRA",
+      "Individual account",
+      "Qualified tax-free withdrawals",
+    ],
     ["SEP IRA", "SEP-IRA", "Business retirement", "Employer contributions"],
-    ["SIMPLE IRA", "SIMPLE-IRA", "Small-business retirement", "Employer sponsored"],
+    [
+      "SIMPLE IRA",
+      "SIMPLE-IRA",
+      "Small-business retirement",
+      "Employer sponsored",
+    ],
     ["403(b)", "403B", "Employer account", "Education/nonprofit employees"],
     ["457(b)", "457B", "Employer account", "Government employees"],
   ],
@@ -155,20 +195,39 @@ export function RealMarketsPage() {
           value={cap ? `${((btc / cap) * 100).toFixed(2)}%` : "—"}
           change="Share of tracked market cap"
         />
-        <MetricCard label="Market coverage" value="6 classes" change="Bonds, funds, stocks, retirement, REITs, and crypto" />
+        <MetricCard
+          label="Market coverage"
+          value="6 classes"
+          change="Bonds, funds, stocks, retirement, REITs, and crypto"
+        />
       </div>
       <div className="mt-4 grid gap-4 xl:grid-cols-2">
         {Object.entries(traditionalMarkets).map(([category, instruments]) => (
           <Card key={category} title={category}>
             <DataTable
               headers={["Instrument", "Symbol", "Type", "Market"]}
-              rows={instruments.map(([name, symbol, type, market]) => [name, <b key={symbol}>{symbol}</b>, type, market])}
+              rows={instruments.map(([name, symbol, type, market]) => [
+                <span
+                  key={symbol}
+                  className="flex min-w-[190px] items-center gap-3"
+                >
+                  <MarketLogo symbol={symbol} size="sm" />
+                  <b>{name}</b>
+                </span>,
+                <b key={symbol}>{symbol}</b>,
+                type,
+                market,
+              ])}
             />
           </Card>
         ))}
       </div>
       <Card className="mt-4">
-        <p className="text-xs leading-6 text-[#819099]">401(k), IRA, 403(b), and 457(b) products are account structures, not market pairs. They can hold eligible funds, ETFs, stocks, and bonds after an administrator configures the available retirement offering.</p>
+        <p className="text-xs leading-6 text-[#819099]">
+          401(k), IRA, 403(b), and 457(b) products are account structures, not
+          market pairs. They can hold eligible funds, ETFs, stocks, and bonds
+          after an administrator configures the available retirement offering.
+        </p>
       </Card>
       <Card className="mt-4" title="Digital assets">
         {rows.length ? (

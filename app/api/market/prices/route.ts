@@ -1,7 +1,60 @@
 import { NextResponse } from "next/server";
 import { coinGecko } from "@/lib/providers/coingecko";
 import { cryptoTradingAssets } from "@/lib/trading";
-const allowedSymbols=new Set(["BND","AGG","TLT","SHY","LQD","TIP","IEF","VGSH","^TNX","^IRX"]);
-const allowedCrypto=new Set<string>([...Object.values(cryptoTradingAssets),"tether"]);
-async function quote(symbol:string){const response=await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=5d&interval=1d`,{headers:{"User-Agent":"Mozilla/5.0"},next:{revalidate:30}});if(!response.ok)throw new Error("Quote unavailable");const result=(await response.json()).chart?.result?.[0];const meta=result?.meta;const closes=(result?.indicators?.quote?.[0]?.close??[]).filter((v:unknown)=>typeof v==="number") as number[];const price=Number(meta?.regularMarketPrice??closes.at(-1));const previous=Number(meta?.chartPreviousClose??closes.at(-2)??price);return {price,change24h:previous?((price-previous)/previous)*100:null,updatedAt:Math.floor(Date.now()/1000),marketCap:null,volume24h:null}}
-export async function GET(request:Request){const url=new URL(request.url);const symbols=(url.searchParams.get("symbols")??"").split(",").filter(s=>allowedSymbols.has(s));const ids=(url.searchParams.get("ids")??"").split(",").filter(id=>allowedCrypto.has(id));try{const pairs=await Promise.all(symbols.map(async s=>[s,await quote(s)] as const));const crypto=ids.length?await coinGecko.prices(ids):{};return NextResponse.json({data:{...Object.fromEntries(pairs),...crypto}})}catch{return NextResponse.json({error:"Live market data is temporarily unavailable."},{status:502})}}
+import { traditionalTradingSymbols } from "@/lib/trading";
+const allowedSymbols = new Set<string>([
+  ...traditionalTradingSymbols,
+  "^TNX",
+  "^IRX",
+]);
+const allowedCrypto = new Set<string>([
+  ...Object.values(cryptoTradingAssets),
+  "tether",
+]);
+async function quote(symbol: string) {
+  const response = await fetch(
+    `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=5d&interval=1d`,
+    { headers: { "User-Agent": "Mozilla/5.0" }, next: { revalidate: 30 } },
+  );
+  if (!response.ok) throw new Error("Quote unavailable");
+  const result = (await response.json()).chart?.result?.[0];
+  const meta = result?.meta;
+  const closes = (result?.indicators?.quote?.[0]?.close ?? []).filter(
+    (v: unknown) => typeof v === "number",
+  ) as number[];
+  const price = Number(meta?.regularMarketPrice ?? closes.at(-1));
+  const previous = Number(meta?.chartPreviousClose ?? closes.at(-2) ?? price);
+  return {
+    price,
+    change24h: previous ? ((price - previous) / previous) * 100 : null,
+    updatedAt: Math.floor(Date.now() / 1000),
+    marketCap: null,
+    volume24h: null,
+  };
+}
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const symbols = (url.searchParams.get("symbols") ?? "")
+    .split(",")
+    .filter((s) => allowedSymbols.has(s));
+  const ids = (url.searchParams.get("ids") ?? "")
+    .split(",")
+    .filter((id) => allowedCrypto.has(id));
+  try {
+    const settled = await Promise.allSettled(
+      symbols.map(async (s) => [s, await quote(s)] as const),
+    );
+    const pairs = settled.flatMap((result) =>
+      result.status === "fulfilled" ? [result.value] : [],
+    );
+    const crypto = ids.length ? await coinGecko.prices(ids) : {};
+    return NextResponse.json({
+      data: { ...Object.fromEntries(pairs), ...crypto },
+    });
+  } catch {
+    return NextResponse.json(
+      { error: "Live market data is temporarily unavailable." },
+      { status: 502 },
+    );
+  }
+}

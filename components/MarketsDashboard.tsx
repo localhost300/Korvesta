@@ -9,22 +9,30 @@ export function MarketsDashboard({
   initialQuery?: string;
 }) {
   const [query, setQuery] = useState(initialQuery);
+  const [category, setCategory] = useState("All markets");
   const visible = useMemo(
     () =>
-      assets.filter((a) =>
-        `${a.name} ${a.symbol}`.toLowerCase().includes(query.toLowerCase()),
-      ),
-    [query],
+      assets.filter((a) => {
+        const matchesQuery = `${a.name} ${a.symbol}`
+          .toLowerCase()
+          .includes(query.toLowerCase());
+        const assetCategory = a.category ?? "Bonds";
+        return (
+          matchesQuery &&
+          (category === "All markets" || assetCategory === category)
+        );
+      }),
+    [category, query],
   );
   return (
     <div className="container-shell py-10">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-4xl font-semibold tracking-[-.04em]">
-            Bond Markets
+            Global Markets
           </h1>
           <p className="mt-2 text-sm text-muted">
-            Treasury yields, bond ETFs and fixed-income research
+            Live US stocks, broad-market ETFs, bonds and digital assets
           </p>
         </div>
         <label className="relative">
@@ -42,58 +50,45 @@ export function MarketsDashboard({
       </div>
       <div className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <MarketStatCard
-          label="10Y Treasury yield"
-          value="4.28%"
-          change={-0.04}
-          data={assets[0].data}
+          label="US stocks"
+          value="11 tracked"
+          change={1}
+          data={assets[12].data}
         />
         <MarketStatCard
-          label="2Y Treasury yield"
-          value="4.71%"
-          change={-0.02}
-          data={assets[1].data}
+          label="Stock-market ETFs"
+          value="3 tracked"
+          change={1}
+          data={assets[8].data}
         />
         <MarketStatCard
-          label="10Y–2Y spread"
-          value="-43 bps"
-          change={0.02}
-          data={assets[3].data}
+          label="Fixed income"
+          value="8 tracked"
+          change={0}
+          data={assets[2].data}
         />
         <MarketStatCard
-          label="Investment-grade spread"
-          value="92 bps"
-          change={-0.03}
-          data={assets[6].data}
+          label="Digital assets"
+          value="2 tracked"
+          change={1}
+          data={assets[22].data}
         />
       </div>
       <div className="mt-4 grid gap-4 xl:grid-cols-[1fr_320px]">
         <section>
           <div className="mb-3 flex gap-2">
-            {[
-              "All fixed income",
-              "Treasuries",
-              "Bond ETFs",
-              "Corporate bonds",
-            ].map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() =>
-                  setQuery(
-                    t === "All fixed income"
-                      ? ""
-                      : t === "Treasuries"
-                        ? "Treasury"
-                        : t === "Bond ETFs"
-                          ? "ETF"
-                          : "Corporate",
-                  )
-                }
-                className="ghost-button min-h-9 text-xs"
-              >
-                {t}
-              </button>
-            ))}
+            {["All markets", "US Stocks", "Stock ETFs", "Bonds", "Crypto"].map(
+              (t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setCategory(t)}
+                  className={`ghost-button min-h-9 text-xs ${category === t ? "border-[var(--amber)] text-[var(--amber)]" : ""}`}
+                >
+                  {t}
+                </button>
+              ),
+            )}
           </div>
           {visible.length ? (
             <MarketsTable limit={visible.length} items={visible} />
@@ -104,9 +99,9 @@ export function MarketsDashboard({
           )}
         </section>
         <aside className="surface p-5">
-          <h2 className="font-semibold">Active bond ETFs</h2>
+          <h2 className="font-semibold">Popular US markets</h2>
           <p className="mt-1 text-xs text-muted">
-            Illustrative delayed market snapshot
+            Live quotes refresh every 30 seconds
           </p>
           <div className="mt-5">
             <MoversList />

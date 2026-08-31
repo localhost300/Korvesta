@@ -8,6 +8,9 @@ import {
 import { assets, type Asset } from "@/lib/data";
 import { changeClass, formatChange } from "@/lib/utils";
 import { Sparkline } from "./Charts";
+import { MarketLogo } from "./MarketLogo";
+import { useLiveFixedIncome } from "@/lib/use-live-fixed-income";
+import { formatUsd } from "@/lib/use-live-prices";
 export function CoinBadge({
   asset,
   small = false,
@@ -16,12 +19,11 @@ export function CoinBadge({
   small?: boolean;
 }) {
   return (
-    <span
-      className={`grid shrink-0 place-items-center rounded-full font-bold text-white ${small ? "h-6 w-6 text-[8px]" : "h-9 w-9 text-[9px]"}`}
-      style={{ background: asset.colour }}
-    >
-      {asset.symbol.slice(0, 2)}
-    </span>
+    <MarketLogo
+      symbol={asset.symbol}
+      colour={asset.colour}
+      size={small ? "sm" : "md"}
+    />
   );
 }
 export function MarketStatCard({
@@ -89,6 +91,7 @@ export function MarketsTable({
   limit?: number;
   items?: Asset[];
 }) {
+  const live = useLiveFixedIncome();
   return (
     <div className="surface overflow-hidden">
       <div className="overflow-x-auto">
@@ -124,9 +127,15 @@ export function MarketsTable({
                     <span className="text-muted">{a.symbol}</span>
                   </div>
                 </td>
-                <td>{a.price}</td>
-                <td className={changeClass(a.change24h)}>
-                  {formatChange(a.change24h)}
+                <td>
+                  {live[a.symbol] ? formatUsd(live[a.symbol].price) : a.price}
+                </td>
+                <td
+                  className={changeClass(
+                    live[a.symbol]?.change24h ?? a.change24h,
+                  )}
+                >
+                  {formatChange(live[a.symbol]?.change24h ?? a.change24h)}
                 </td>
                 <td className={changeClass(a.change7d)}>
                   {formatChange(a.change7d)}
@@ -155,9 +164,12 @@ export function MarketsTable({
   );
 }
 export function MoversList() {
+  const popular = assets
+    .filter((asset) => asset.category === "US Stocks")
+    .slice(0, 5);
   return (
     <div className="grid gap-3">
-      {assets.slice(3, 7).map((a) => (
+      {popular.map((a) => (
         <div key={a.symbol} className="flex items-center gap-3">
           <CoinBadge asset={a} small />
           <span className="flex-1 text-xs font-semibold">{a.symbol}</span>
