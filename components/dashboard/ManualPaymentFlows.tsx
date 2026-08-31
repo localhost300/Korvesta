@@ -11,6 +11,7 @@ import {
 import { QRCodeSVG } from "qrcode.react";
 import { Card, PageHeading } from "./DashboardUI";
 import { usePortfolio } from "@/lib/use-portfolio";
+import { CryptoLogo } from "@/components/CryptoLogo";
 
 type Network = {
   id: string;
@@ -142,12 +143,11 @@ export function DepositFlow() {
             <div className="grid gap-5 rounded-2xl border border-[#ffc40055] bg-[#ffc40008] p-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
               <div className="min-w-0">
                 <div className="mb-4 flex items-center gap-3">
-                  <span
-                    className="grid size-10 shrink-0 place-items-center rounded-full text-sm font-bold text-white shadow-lg"
-                    style={{ backgroundColor: asset.logo_color }}
-                  >
-                    {asset.symbol.slice(0, 1)}
-                  </span>
+                  <CryptoLogo
+                    symbol={asset.symbol}
+                    size="lg"
+                    className="!size-10"
+                  />
                   <div>
                     <p className="text-sm font-bold">{asset.name}</p>
                     <p className="text-xs text-[var(--dash-muted)]">

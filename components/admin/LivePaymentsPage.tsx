@@ -11,6 +11,7 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { AdminCard, AdminHeading, AdminStatus, AdminTable } from "./AdminUI";
+import { CryptoLogo } from "@/components/CryptoLogo";
 
 type Payment = {
   id: string;
@@ -122,7 +123,14 @@ export function LivePaymentsPage() {
             <span key="type" className="capitalize">
               {payment.type}
             </span>,
-            payment.assets?.symbol ?? "—",
+            payment.assets?.symbol ? (
+              <span key="asset" className="flex items-center gap-2">
+                <CryptoLogo symbol={payment.assets.symbol} size="sm" />
+                <b>{payment.assets.symbol}</b>
+              </span>
+            ) : (
+              "—"
+            ),
             payment.networks?.name ?? "—",
             Number(payment.amount).toLocaleString(),
             new Date(payment.created_at).toLocaleString(),
@@ -158,7 +166,18 @@ export function LivePaymentsPage() {
             </div>
             <div className="mt-5 grid gap-3 text-xs">
               {[
-                ["Asset", selected.assets?.symbol],
+                [
+                  "Asset",
+                  selected.assets?.symbol ? (
+                    <span
+                      key="selected-asset"
+                      className="inline-flex items-center gap-2"
+                    >
+                      <CryptoLogo symbol={selected.assets.symbol} size="sm" />
+                      {selected.assets.symbol}
+                    </span>
+                  ) : null,
+                ],
                 ["Network", selected.networks?.name],
                 ["Amount", selected.amount],
                 ["Transaction hash", selected.transaction_hash],
@@ -168,7 +187,7 @@ export function LivePaymentsPage() {
                 .filter(([, value]) => value)
                 .map(([label, value]) => (
                   <div
-                    key={label}
+                    key={String(label)}
                     className="flex justify-between gap-6 border-b border-[var(--dash-line)] py-2"
                   >
                     <span className="text-[var(--dash-muted)]">{label}</span>

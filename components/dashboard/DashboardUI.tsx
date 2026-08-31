@@ -4,6 +4,7 @@ import type { Icon } from "@tabler/icons-react";
 import { IconArrowUpRight } from "@tabler/icons-react";
 import { clsx } from "clsx";
 import { Sparkline } from "@/components/Charts";
+import { CryptoLogo } from "@/components/CryptoLogo";
 
 export function Card({
   children,
@@ -182,19 +183,8 @@ export function Coin({
   colour?: string;
   size?: "sm" | "md" | "lg";
 }) {
-  return (
-    <span
-      className={clsx(
-        "coin",
-        size === "sm" && "size-7 text-[10px]",
-        size === "md" && "size-9 text-xs",
-        size === "lg" && "size-12 text-base",
-      )}
-      style={{ background: colour }}
-    >
-      {symbol.slice(0, 1)}
-    </span>
-  );
+  void colour;
+  return <CryptoLogo symbol={symbol} size={size} />;
 }
 
 export function Status({

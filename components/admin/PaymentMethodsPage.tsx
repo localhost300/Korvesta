@@ -16,6 +16,7 @@ import {
   AdminTable,
   FieldLabel,
 } from "./AdminUI";
+import { CryptoLogo } from "@/components/CryptoLogo";
 
 type Method = {
   id: string;
@@ -147,12 +148,11 @@ export function PaymentMethodsPage() {
           <form onSubmit={create} className="grid gap-4 sm:grid-cols-2">
             <FieldLabel label="Cryptocurrency and logo">
               <div className="relative">
-                <span
-                  className="pointer-events-none absolute left-3 top-1/2 z-10 grid size-7 -translate-y-1/2 place-items-center rounded-full text-[10px] font-bold text-white"
-                  style={{ background: form.logoColor }}
-                >
-                  {form.symbol.slice(0, 1) || "?"}
-                </span>
+                <CryptoLogo
+                  symbol={form.symbol || "?"}
+                  size="sm"
+                  className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2"
+                />
                 <select
                   required
                   className="dash-input !pl-12"
@@ -325,12 +325,7 @@ export function PaymentMethodsPage() {
             ]}
             rows={methods.map((method) => [
               <span key="asset" className="flex items-center gap-2">
-                <i
-                  className="grid size-7 place-items-center rounded-full text-[10px] font-bold text-white"
-                  style={{ background: method.assets?.logo_color ?? "#64748b" }}
-                >
-                  {method.assets?.symbol.slice(0, 1) ?? "?"}
-                </i>
+                <CryptoLogo symbol={method.assets?.symbol ?? "?"} size="sm" />
                 <b>{method.assets?.symbol ?? "—"}</b>
               </span>,
               method.name,
