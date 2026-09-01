@@ -16,6 +16,7 @@ import {
   IconMail,
   IconUser,
 } from "@tabler/icons-react";
+import { CountrySelect } from "./CountrySelect";
 
 function AuthInput({
   label,
@@ -370,22 +371,7 @@ export function RegisterForm() {
         <label className="block text-xs font-semibold">
           Country of residence
           <span className="relative mt-2 block">
-            <IconMail
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-muted"
-              size={17}
-            />
-            <select name="country" required className="field appearance-none">
-              <option value="">Select your country</option>
-              <option>Nigeria</option>
-              <option>Ghana</option>
-              <option>Kenya</option>
-              <option>South Africa</option>
-              <option>United Kingdom</option>
-            </select>
-            <IconChevronDown
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted"
-              size={16}
-            />
+            <CountrySelect name="country" required />
           </span>
         </label>
       </div>
