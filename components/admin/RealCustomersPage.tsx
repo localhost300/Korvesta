@@ -12,6 +12,7 @@ import {
 } from "./AdminUI";
 import {
   IconEdit,
+  IconDots,
   IconKey,
   IconLock,
   IconTrash,
@@ -37,7 +38,7 @@ export function RealCustomersPage() {
   const [notice, setNotice] = useState("");
   const [modal, setModal] = useState<
     | { type: "edit"; customer: Customer }
-    | { type: "access" | "balance" | "password" | "delete"; customer: Customer }
+    | { type: "manage" | "access" | "balance" | "password" | "delete"; customer: Customer }
     | null
   >(null);
   const [fullName, setFullName] = useState("");
@@ -233,28 +234,34 @@ export function RealCustomersPage() {
               currency: "USD",
             }),
             new Date(customer.created_at).toLocaleDateString(),
-            <div key="controls" className="flex flex-wrap gap-1">
+            <div key="controls">
               <button
                 type="button"
-                className="dash-button min-h-8 px-3"
-                onClick={() => openEdit(customer)}
+                className="dash-button min-h-8 whitespace-nowrap px-3"
+                onClick={() => setModal({ type: "manage", customer })}
+                aria-label={`Manage ${customer.full_name || customer.email}`}
               >
-                <IconEdit size={14} /> Edit
+                <IconDots size={16} /> Manage
               </button>
-              <button
-                type="button"
-                className="dash-button min-h-8 px-3"
-                onClick={() => openAccess(customer)}
-              >
-                <IconLock size={14} /> Manage access
-              </button>
-              <button type="button" className="dash-button min-h-8 px-3" onClick={() => openAction("balance", customer)}><IconWallet size={14} /> Balance</button>
-              <button type="button" className="dash-button min-h-8 px-3" onClick={() => openAction("password", customer)}><IconKey size={14} /> Password</button>
-              <button type="button" className="dash-button min-h-8 px-3 text-[#ef4444]" onClick={() => openAction("delete", customer)}><IconTrash size={14} /> Delete</button>
             </div>,
           ])}
         />
       </AdminCard>
+      {modal?.type === "manage" ? (
+        <AdminModal
+          title={modal.customer.full_name || "Manage customer"}
+          copy={`${modal.customer.email} · Choose an administrative action.`}
+          close={() => setModal(null)}
+        >
+          <div className="grid gap-2 sm:grid-cols-2">
+            <button type="button" className="dash-button w-full justify-start" onClick={() => openEdit(modal.customer)}><IconEdit size={16}/>Edit details</button>
+            <button type="button" className="dash-button w-full justify-start" onClick={() => openAction("balance", modal.customer)}><IconWallet size={16}/>Adjust balance</button>
+            <button type="button" className="dash-button w-full justify-start" onClick={() => openAccess(modal.customer)}><IconLock size={16}/>Manage access</button>
+            <button type="button" className="dash-button w-full justify-start" onClick={() => openAction("password", modal.customer)}><IconKey size={16}/>Change password</button>
+            <button type="button" className="dash-button w-full justify-start text-[#ef4444] sm:col-span-2" onClick={() => openAction("delete", modal.customer)}><IconTrash size={16}/>Delete customer</button>
+          </div>
+        </AdminModal>
+      ) : null}
       {modal?.type === "edit" ? (
         <AdminModal
           title="Edit customer"
