@@ -130,11 +130,65 @@ export async function PATCH(request: Request) {
   const context = await adminContext();
   if (context.error) return context.error;
   const body = await request.json().catch(() => null);
+  if (body?.action === "adjust_balance") {
+    const { error } = await context.supabase!.rpc("adjust_customer_balance", {
+      customer_id: body?.customerId,
+      requested_amount: body?.amount,
+      adjustment_kind: body?.kind,
+      note: body?.note,
+    });
+    return error
+      ? NextResponse.json({ error: error.message }, { status: 400 })
+      : NextResponse.json({ ok: true });
+  }
+  if (body?.action === "change_password") {
+    const password = typeof body?.password === "string" ? body.password : "";
+    if (password.length < 8)
+      return NextResponse.json({ error: "Password must be at least 8 characters." }, { status: 400 });
+    const admin = createAdminClient();
+    if (!admin)
+      return NextResponse.json({ error: "Server administrator key is not configured." }, { status: 503 });
+    const { error } = await admin.auth.admin.updateUserById(body?.customerId, { password });
+    return error
+      ? NextResponse.json({ error: error.message }, { status: 400 })
+      : NextResponse.json({ ok: true });
+  }
+  if (body?.action === "update_profile") {
+    const { error } = await context.supabase!.rpc("update_customer_profile", {
+      customer_id: body?.customerId,
+      requested_name: body?.fullName,
+      requested_country: body?.country,
+      note: body?.note,
+    });
+    return error
+      ? NextResponse.json({ error: error.message }, { status: 400 })
+      : NextResponse.json({ ok: true });
+  }
   const { error } = await context.supabase!.rpc("set_customer_account_status", {
     customer_id: body?.customerId,
     next_status: body?.status,
     note: body?.note,
   });
+  return error
+    ? NextResponse.json({ error: error.message }, { status: 400 })
+    : NextResponse.json({ ok: true });
+}
+
+export async function DELETE(request: Request) {
+  const cross = rejectCrossSiteMutation(request);
+  if (cross) return cross;
+  const context = await adminContext();
+  if (context.error) return context.error;
+  const body = await request.json().catch(() => null);
+  if (!body?.customerId || body?.confirmation !== "DELETE")
+    return NextResponse.json({ error: "Type DELETE to confirm account deletion." }, { status: 400 });
+  const admin = createAdminClient();
+  if (!admin)
+    return NextResponse.json({ error: "Server administrator key is not configured." }, { status: 503 });
+  const { data: profile } = await admin.from("profiles").select("role").eq("id", body.customerId).single();
+  if (profile?.role !== "customer")
+    return NextResponse.json({ error: "Customer not found." }, { status: 404 });
+  const { error } = await admin.auth.admin.deleteUser(body.customerId);
   return error
     ? NextResponse.json({ error: error.message }, { status: 400 })
     : NextResponse.json({ ok: true });
